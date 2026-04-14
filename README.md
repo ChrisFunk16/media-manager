@@ -27,6 +27,7 @@ Interactive CLI tool for downloading and organizing media from multiple sources.
 
 ## 🚀 Quick Start
 
+**Linux/Mac:**
 ```bash
 # Clone the repo
 git clone https://github.com/ChrisFunk16/media-manager.git
@@ -37,6 +38,20 @@ mkdir -p incoming sorted/{images,videos,hypno}
 
 # Run it!
 ./mm
+```
+
+**Windows:**
+```cmd
+# Clone the repo
+git clone https://github.com/ChrisFunk16/media-manager.git
+cd media-manager
+
+# Create data folders
+mkdir incoming
+mkdir sorted\images sorted\videos sorted\hypno
+
+# Run it!
+mm.bat
 ```
 
 That's it! The tool will auto-install `gallery-dl` when you first download something.
