@@ -39,12 +39,16 @@ def get_category(file_path):
     return None  # Unbekannt
 
 def sort_files():
-    """Sortiert alle Files aus incoming/"""
+    """Sortiert alle Files aus incoming/ (inkl. Unterordner)"""
     if not INCOMING.exists():
         print(f"❌ {INCOMING} existiert nicht")
         return
     
-    files = [f for f in INCOMING.iterdir() if f.is_file()]
+    # Find all files recursively (inkl. Unterordner)
+    files = []
+    for root, dirs, filenames in os.walk(INCOMING):
+        for filename in filenames:
+            files.append(Path(root) / filename)
     
     if not files:
         print("✅ Keine Files zum Sortieren")
@@ -77,6 +81,17 @@ def sort_files():
         else:
             print(f"⚠️ Übersprungen (unbekannter Typ): {file_path.name}")
             skipped_count += 1
+    
+    # Cleanup: Lösche leere Unterordner in incoming/
+    for root, dirs, files in os.walk(INCOMING, topdown=False):
+        for dir_name in dirs:
+            dir_path = Path(root) / dir_name
+            try:
+                if not any(dir_path.iterdir()):  # Leer?
+                    dir_path.rmdir()
+                    print(f"🗑️ Leerer Ordner entfernt: {dir_path.relative_to(INCOMING)}")
+            except:
+                pass  # Ignore errors
     
     print(f"\n📊 Fertig: {sorted_count} sortiert, {skipped_count} übersprungen")
 
