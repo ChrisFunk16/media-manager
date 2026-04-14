@@ -1,0 +1,17 @@
+# Data folders - don't commit user content
+incoming/
+sorted/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~

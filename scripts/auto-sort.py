@@ -1,0 +1,83 @@
+#!/usr/bin/env python3
+"""
+Auto-Sortierer für Media Files
+Überwacht incoming/ und sortiert nach Dateityp
+"""
+
+import os
+import shutil
+from pathlib import Path
+import mimetypes
+
+# Pfade
+BASE_DIR = Path(__file__).parent.parent
+INCOMING = BASE_DIR / "incoming"
+SORTED = BASE_DIR / "sorted"
+
+# Kategorien
+IMAGE_EXTS = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'}
+VIDEO_EXTS = {'.mp4', '.mkv', '.avi', '.mov', '.webm', '.flv', '.wmv', '.m4v'}
+
+def get_category(file_path):
+    """Bestimmt Kategorie basierend auf Extension"""
+    ext = file_path.suffix.lower()
+    
+    if ext in IMAGE_EXTS:
+        return "images"
+    elif ext in VIDEO_EXTS:
+        return "videos"
+    else:
+        # Fallback: MIME-Type checken
+        mime, _ = mimetypes.guess_type(str(file_path))
+        if mime:
+            if mime.startswith('image/'):
+                return "images"
+            elif mime.startswith('video/'):
+                return "videos"
+    
+    return None  # Unbekannt
+
+def sort_files():
+    """Sortiert alle Files aus incoming/"""
+    if not INCOMING.exists():
+        print(f"❌ {INCOMING} existiert nicht")
+        return
+    
+    files = [f for f in INCOMING.iterdir() if f.is_file()]
+    
+    if not files:
+        print("✅ Keine Files zum Sortieren")
+        return
+    
+    sorted_count = 0
+    skipped_count = 0
+    
+    for file_path in files:
+        category = get_category(file_path)
+        
+        if category:
+            target_dir = SORTED / category
+            target_dir.mkdir(parents=True, exist_ok=True)
+            
+            target_path = target_dir / file_path.name
+            
+            # Handle Duplikate
+            if target_path.exists():
+                base = target_path.stem
+                ext = target_path.suffix
+                counter = 1
+                while target_path.exists():
+                    target_path = target_dir / f"{base}_{counter}{ext}"
+                    counter += 1
+            
+            shutil.move(str(file_path), str(target_path))
+            print(f"✅ {file_path.name} → {category}/")
+            sorted_count += 1
+        else:
+            print(f"⚠️ Übersprungen (unbekannter Typ): {file_path.name}")
+            skipped_count += 1
+    
+    print(f"\n📊 Fertig: {sorted_count} sortiert, {skipped_count} übersprungen")
+
+if __name__ == "__main__":
+    sort_files()

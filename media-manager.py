@@ -1,0 +1,431 @@
+#!/usr/bin/env python3
+"""
+Media Manager - Interaktive CLI
+Alles an einem Ort: Download, Sortieren, Browse
+"""
+
+import os
+import sys
+import subprocess
+import json
+from pathlib import Path
+
+BASE_DIR = Path(__file__).parent
+INCOMING = BASE_DIR / "incoming"
+SORTED = BASE_DIR / "sorted"
+SCRIPTS = BASE_DIR / "scripts"
+PRESETS_FILE = BASE_DIR / "tag-presets.json"
+
+# Farben für Terminal
+class Colors:
+    HEADER = '\033[95m'
+    BLUE = '\033[94m'
+    GREEN = '\033[92m'
+    YELLOW = '\033[93m'
+    RED = '\033[91m'
+    END = '\033[0m'
+    BOLD = '\033[1m'
+
+def clear():
+    os.system('clear' if os.name != 'nt' else 'cls')
+
+def load_presets():
+    """Lädt Tag-Presets aus JSON"""
+    if not PRESETS_FILE.exists():
+        return {"presets": {}, "mixes": {}}
+    try:
+        with open(PRESETS_FILE, 'r') as f:
+            return json.load(f)
+    except:
+        return {"presets": {}, "mixes": {}}
+
+def save_presets(data):
+    """Speichert Tag-Presets"""
+    with open(PRESETS_FILE, 'w') as f:
+        json.dump(data, f, indent=2)
+
+def resolve_tags(preset_name, data):
+    """Löst Preset-Name in Tags auf (rekursiv für Mixes)"""
+    # Check presets
+    if preset_name in data['presets']:
+        return data['presets'][preset_name]
+    
+    # Check mixes
+    if preset_name in data['mixes']:
+        tags = []
+        for item in data['mixes'][preset_name]:
+            if item in data['presets']:
+                tags.extend(data['presets'][item])
+            else:
+                tags.append(item)  # Direct tag
+        return tags
+    
+    return None
+
+def print_header():
+    print(f"{Colors.BOLD}{Colors.BLUE}")
+    print("╔═══════════════════════════════════════╗")
+    print("║      📦 MEDIA MANAGER v1.0           ║")
+    print("╚═══════════════════════════════════════╝")
+    print(f"{Colors.END}")
+
+def print_menu():
+    print(f"\n{Colors.BOLD}Hauptmenü:{Colors.END}")
+    print(f"  {Colors.GREEN}1{Colors.END} - Download (Reddit)")
+    print(f"  {Colors.GREEN}2{Colors.END} - Download (Rule34.xxx)")
+    print(f"  {Colors.GREEN}3{Colors.END} - Download (Redgifs)")
+    print(f"  {Colors.GREEN}4{Colors.END} - Download (Custom URL)")
+    print(f"  {Colors.GREEN}5{Colors.END} - Auto-Sort (incoming → sorted)")
+    print(f"  {Colors.GREEN}6{Colors.END} - Browse Sorted Files")
+    print(f"  {Colors.GREEN}7{Colors.END} - Stats anzeigen")
+    print(f"  {Colors.YELLOW}8{Colors.END} - Tag-Presets verwalten")
+    print(f"  {Colors.RED}q{Colors.END} - Quit")
+    print()
+
+def download(url):
+    """Führt media-downloader.py aus"""
+    print(f"\n{Colors.YELLOW}⬇️ Starte Download...{Colors.END}")
+    cmd = [sys.executable, str(SCRIPTS / "media-downloader.py"), url]
+    subprocess.run(cmd)
+    input(f"\n{Colors.BLUE}Enter drücken um fortzufahren...{Colors.END}")
+
+def download_reddit():
+    clear()
+    print_header()
+    print(f"{Colors.BOLD}Reddit Download{Colors.END}\n")
+    print("Beispiele:")
+    print("  https://reddit.com/r/wallpapers")
+    print("  https://reddit.com/r/pics/comments/xyz123/")
+    print("  https://reddit.com/user/username")
+    print()
+    
+    url = input(f"{Colors.GREEN}URL eingeben:{Colors.END} ").strip()
+    if url:
+        download(url)
+
+def download_rule34():
+    clear()
+    print_header()
+    print(f"{Colors.BOLD}Rule34.xxx Download{Colors.END}\n")
+    print("Optionen:")
+    print("  1 - Post ID eingeben")
+    print("  2 - Tag-Suche (manuell)")
+    print("  3 - From Preset")
+    print("  4 - Mix Presets")
+    print("  5 - Custom URL")
+    print()
+    
+    choice = input(f"{Colors.GREEN}Auswahl:{Colors.END} ").strip()
+    
+    if choice == "1":
+        post_id = input(f"{Colors.GREEN}Post ID:{Colors.END} ").strip()
+        url = f"https://rule34.xxx/index.php?page=post&s=view&id={post_id}"
+        download(url)
+    elif choice == "2":
+        tags = input(f"{Colors.GREEN}Tags (Leerzeichen-getrennt):{Colors.END} ").strip()
+        tags_formatted = tags.replace(' ', '+')
+        url = f"https://rule34.xxx/index.php?page=post&s=list&tags={tags_formatted}"
+        download(url)
+    elif choice == "3":
+        # From Preset
+        data = load_presets()
+        if not data['presets']:
+            print(f"{Colors.RED}❌ Keine Presets vorhanden!{Colors.END}")
+            print(f"{Colors.YELLOW}Erst Presets erstellen (Option 8 im Hauptmenü){Colors.END}")
+            input(f"\n{Colors.BLUE}Enter drücken...{Colors.END}")
+            return
+        
+        print(f"\n{Colors.BOLD}Verfügbare Presets:{Colors.END}")
+        for name, tags in data['presets'].items():
+            tags_str = ', '.join(tags)
+            print(f"  {Colors.GREEN}{name}{Colors.END}: {tags_str}")
+        
+        preset_name = input(f"\n{Colors.GREEN}Preset:{Colors.END} ").strip()
+        tags_list = resolve_tags(preset_name, data)
+        
+        if tags_list:
+            tags_formatted = '+'.join(tags_list)
+            url = f"https://rule34.xxx/index.php?page=post&s=list&tags={tags_formatted}"
+            print(f"{Colors.BLUE}Tags: {' '.join(tags_list)}{Colors.END}")
+            download(url)
+        else:
+            print(f"{Colors.RED}❌ Preset nicht gefunden{Colors.END}")
+            input(f"\n{Colors.BLUE}Enter drücken...{Colors.END}")
+    
+    elif choice == "4":
+        # Mix Presets
+        data = load_presets()
+        if not data['presets']:
+            print(f"{Colors.RED}❌ Keine Presets vorhanden!{Colors.END}")
+            input(f"\n{Colors.BLUE}Enter drücken...{Colors.END}")
+            return
+        
+        print(f"\n{Colors.BOLD}Verfügbare Presets:{Colors.END}")
+        for name, tags in data['presets'].items():
+            tags_str = ', '.join(tags)
+            print(f"  {Colors.GREEN}{name}{Colors.END}: {tags_str}")
+        
+        print(f"\n{Colors.YELLOW}Mehrere Presets/Tags kombinieren (Leerzeichen-getrennt){Colors.END}")
+        mix_input = input(f"{Colors.GREEN}Presets/Tags:{Colors.END} ").strip().split()
+        
+        all_tags = []
+        for item in mix_input:
+            resolved = resolve_tags(item, data)
+            if resolved:
+                all_tags.extend(resolved)
+            else:
+                all_tags.append(item)  # Direkter Tag
+        
+        if all_tags:
+            tags_formatted = '+'.join(all_tags)
+            url = f"https://rule34.xxx/index.php?page=post&s=list&tags={tags_formatted}"
+            print(f"{Colors.BLUE}Tags: {' '.join(all_tags)}{Colors.END}")
+            download(url)
+        else:
+            print(f"{Colors.RED}❌ Keine gültigen Tags{Colors.END}")
+            input(f"\n{Colors.BLUE}Enter drücken...{Colors.END}")
+    
+    elif choice == "5":
+        url = input(f"{Colors.GREEN}URL:{Colors.END} ").strip()
+        if url:
+            download(url)
+
+def download_redgifs():
+    clear()
+    print_header()
+    print(f"{Colors.BOLD}Redgifs Download{Colors.END}\n")
+    print("Optionen:")
+    print("  1 - Einzelnes GIF (ID eingeben)")
+    print("  2 - User/Creator")
+    print("  3 - Search/Tags")
+    print("  4 - Custom URL")
+    print()
+    
+    choice = input(f"{Colors.GREEN}Auswahl:{Colors.END} ").strip()
+    
+    if choice == "1":
+        gif_id = input(f"{Colors.GREEN}GIF ID:{Colors.END} ").strip()
+        url = f"https://redgifs.com/watch/{gif_id}"
+        download(url)
+    elif choice == "2":
+        username = input(f"{Colors.GREEN}Username:{Colors.END} ").strip()
+        url = f"https://redgifs.com/users/{username}"
+        download(url)
+    elif choice == "3":
+        query = input(f"{Colors.GREEN}Search Query:{Colors.END} ").strip()
+        url = f"https://redgifs.com/gifs/search?query={query}"
+        download(url)
+    elif choice == "4":
+        url = input(f"{Colors.GREEN}URL:{Colors.END} ").strip()
+        if url:
+            download(url)
+
+def download_custom():
+    clear()
+    print_header()
+    print(f"{Colors.BOLD}Custom URL Download{Colors.END}\n")
+    print("Unterstützt: Instagram, Twitter, Imgur, DeviantArt, Gelbooru, etc.")
+    print()
+    
+    url = input(f"{Colors.GREEN}URL eingeben:{Colors.END} ").strip()
+    if url:
+        download(url)
+
+def auto_sort():
+    clear()
+    print_header()
+    print(f"{Colors.BOLD}Auto-Sort{Colors.END}\n")
+    
+    # Count files first
+    if not INCOMING.exists():
+        print(f"{Colors.RED}❌ incoming/ Ordner nicht gefunden{Colors.END}")
+        input(f"\n{Colors.BLUE}Enter drücken...{Colors.END}")
+        return
+    
+    files = [f for f in INCOMING.iterdir() if f.is_file()]
+    
+    if not files:
+        print(f"{Colors.YELLOW}ℹ️ Keine Files zum Sortieren{Colors.END}")
+        input(f"\n{Colors.BLUE}Enter drücken...{Colors.END}")
+        return
+    
+    print(f"Gefunden: {len(files)} Files in incoming/\n")
+    confirm = input(f"{Colors.GREEN}Sortieren? (y/n):{Colors.END} ").strip().lower()
+    
+    if confirm == 'y':
+        cmd = [sys.executable, str(SCRIPTS / "auto-sort.py")]
+        subprocess.run(cmd)
+        input(f"\n{Colors.BLUE}Enter drücken...{Colors.END}")
+
+def browse_sorted():
+    clear()
+    print_header()
+    print(f"{Colors.BOLD}Sorted Files{Colors.END}\n")
+    
+    categories = ['images', 'videos', 'hypno']
+    
+    for cat in categories:
+        cat_path = SORTED / cat
+        if cat_path.exists():
+            files = list(cat_path.glob('*'))
+            file_count = len([f for f in files if f.is_file()])
+            print(f"  {Colors.GREEN}{cat:10s}{Colors.END}: {file_count} files")
+        else:
+            print(f"  {Colors.YELLOW}{cat:10s}{Colors.END}: Ordner nicht gefunden")
+    
+    print(f"\n{Colors.BLUE}Pfad: {SORTED}{Colors.END}")
+    input(f"\n{Colors.BLUE}Enter drücken...{Colors.END}")
+
+def show_stats():
+    clear()
+    print_header()
+    print(f"{Colors.BOLD}Statistiken{Colors.END}\n")
+    
+    # Incoming
+    incoming_count = 0
+    if INCOMING.exists():
+        incoming_count = len([f for f in INCOMING.iterdir() if f.is_file()])
+    
+    # Sorted
+    stats = {}
+    for cat in ['images', 'videos', 'hypno']:
+        cat_path = SORTED / cat
+        if cat_path.exists():
+            stats[cat] = len([f for f in cat_path.glob('*') if f.is_file()])
+        else:
+            stats[cat] = 0
+    
+    total_sorted = sum(stats.values())
+    
+    print(f"📥 Incoming:       {incoming_count} files")
+    print(f"📊 Sorted (total): {total_sorted} files")
+    print(f"   ├─ Images:      {stats['images']}")
+    print(f"   ├─ Videos:      {stats['videos']}")
+    print(f"   └─ Hypno:       {stats['hypno']}")
+    
+    input(f"\n{Colors.BLUE}Enter drücken...{Colors.END}")
+
+def manage_tag_presets():
+    """Tag-Preset Management"""
+    while True:
+        clear()
+        print_header()
+        print(f"{Colors.BOLD}Tag-Preset Management{Colors.END}\n")
+        
+        data = load_presets()
+        
+        # Show existing
+        if data['presets']:
+            print(f"{Colors.BOLD}Presets:{Colors.END}")
+            for name, tags in data['presets'].items():
+                tags_str = ', '.join(tags)
+                print(f"  {Colors.GREEN}{name}{Colors.END}: {tags_str}")
+        else:
+            print(f"{Colors.YELLOW}Keine Presets vorhanden{Colors.END}")
+        
+        print(f"\n{Colors.BOLD}Optionen:{Colors.END}")
+        print(f"  {Colors.GREEN}1{Colors.END} - Preset hinzufügen")
+        print(f"  {Colors.GREEN}2{Colors.END} - Preset löschen")
+        print(f"  {Colors.GREEN}3{Colors.END} - Preset bearbeiten")
+        print(f"  {Colors.RED}b{Colors.END} - Zurück")
+        print()
+        
+        choice = input(f"{Colors.GREEN}Auswahl:{Colors.END} ").strip().lower()
+        
+        if choice == '1':
+            # Add
+            print()
+            name = input(f"{Colors.GREEN}Preset-Name:{Colors.END} ").strip()
+            if not name:
+                continue
+            
+            tags_input = input(f"{Colors.GREEN}Tags (Leerzeichen-getrennt):{Colors.END} ").strip()
+            tags = [t.strip() for t in tags_input.split() if t.strip()]
+            
+            if tags:
+                data['presets'][name] = tags
+                save_presets(data)
+                print(f"{Colors.BLUE}✅ Preset '{name}' gespeichert{Colors.END}")
+                input(f"\n{Colors.BLUE}Enter drücken...{Colors.END}")
+        
+        elif choice == '2':
+            # Delete
+            if not data['presets']:
+                print(f"{Colors.RED}Keine Presets zum Löschen{Colors.END}")
+                input(f"\n{Colors.BLUE}Enter drücken...{Colors.END}")
+                continue
+            
+            print()
+            name = input(f"{Colors.GREEN}Preset zum Löschen:{Colors.END} ").strip()
+            if name in data['presets']:
+                del data['presets'][name]
+                save_presets(data)
+                print(f"{Colors.BLUE}✅ Preset '{name}' gelöscht{Colors.END}")
+            else:
+                print(f"{Colors.RED}❌ Preset nicht gefunden{Colors.END}")
+            input(f"\n{Colors.BLUE}Enter drücken...{Colors.END}")
+        
+        elif choice == '3':
+            # Edit
+            if not data['presets']:
+                print(f"{Colors.RED}Keine Presets zum Bearbeiten{Colors.END}")
+                input(f"\n{Colors.BLUE}Enter drücken...{Colors.END}")
+                continue
+            
+            print()
+            name = input(f"{Colors.GREEN}Preset zum Bearbeiten:{Colors.END} ").strip()
+            if name in data['presets']:
+                current = ', '.join(data['presets'][name])
+                print(f"{Colors.YELLOW}Aktuell: {current}{Colors.END}")
+                
+                tags_input = input(f"{Colors.GREEN}Neue Tags (Leerzeichen-getrennt):{Colors.END} ").strip()
+                tags = [t.strip() for t in tags_input.split() if t.strip()]
+                
+                if tags:
+                    data['presets'][name] = tags
+                    save_presets(data)
+                    print(f"{Colors.BLUE}✅ Preset '{name}' aktualisiert{Colors.END}")
+            else:
+                print(f"{Colors.RED}❌ Preset nicht gefunden{Colors.END}")
+            input(f"\n{Colors.BLUE}Enter drücken...{Colors.END}")
+        
+        elif choice == 'b':
+            break
+
+def main():
+    while True:
+        clear()
+        print_header()
+        print_menu()
+        
+        choice = input(f"{Colors.GREEN}Auswahl:{Colors.END} ").strip().lower()
+        
+        if choice == '1':
+            download_reddit()
+        elif choice == '2':
+            download_rule34()
+        elif choice == '3':
+            download_redgifs()
+        elif choice == '4':
+            download_custom()
+        elif choice == '5':
+            auto_sort()
+        elif choice == '6':
+            browse_sorted()
+        elif choice == '7':
+            show_stats()
+        elif choice == '8':
+            manage_tag_presets()
+        elif choice == 'q':
+            print(f"\n{Colors.YELLOW}Bye!{Colors.END}")
+            sys.exit(0)
+        else:
+            print(f"{Colors.RED}Ungültige Auswahl{Colors.END}")
+            input(f"{Colors.BLUE}Enter drücken...{Colors.END}")
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        print(f"\n\n{Colors.YELLOW}Abgebrochen.{Colors.END}")
+        sys.exit(0)
