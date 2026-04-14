@@ -78,9 +78,10 @@ def print_menu():
     print(f"  {Colors.GREEN}4{Colors.END} - Download (Twitter/X)")
     print(f"  {Colors.GREEN}5{Colors.END} - Download (Custom URL)")
     print(f"  {Colors.GREEN}6{Colors.END} - Auto-Sort (incoming → sorted)")
-    print(f"  {Colors.GREEN}7{Colors.END} - Browse Sorted Files")
-    print(f"  {Colors.GREEN}8{Colors.END} - Stats anzeigen")
-    print(f"  {Colors.YELLOW}9{Colors.END} - Tag-Presets verwalten")
+    print(f"  {Colors.GREEN}7{Colors.END} - WebM → MP4 konvertieren")
+    print(f"  {Colors.GREEN}8{Colors.END} - Browse Sorted Files")
+    print(f"  {Colors.GREEN}9{Colors.END} - Stats anzeigen")
+    print(f"  {Colors.YELLOW}0{Colors.END} - Tag-Presets verwalten")
     print(f"  {Colors.RED}q{Colors.END} - Quit")
     print()
 
@@ -294,6 +295,15 @@ def auto_sort():
         subprocess.run(cmd)
         input(f"\n{Colors.BLUE}Enter drücken...{Colors.END}")
 
+def convert_webm():
+    clear()
+    print_header()
+    print(f"{Colors.BOLD}WebM → MP4 Converter{Colors.END}\n")
+    
+    cmd = [sys.executable, str(SCRIPTS / "convert-webm.py")]
+    subprocess.run(cmd)
+    input(f"\n{Colors.BLUE}Enter drücken...{Colors.END}")
+
 def browse_sorted():
     clear()
     print_header()
@@ -451,10 +461,12 @@ def main():
         elif choice == '6':
             auto_sort()
         elif choice == '7':
-            browse_sorted()
+            convert_webm()
         elif choice == '8':
-            show_stats()
+            browse_sorted()
         elif choice == '9':
+            show_stats()
+        elif choice == '0':
             manage_tag_presets()
         elif choice == 'q':
             print(f"\n{Colors.YELLOW}Bye!{Colors.END}")

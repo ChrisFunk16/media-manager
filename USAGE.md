@@ -67,17 +67,28 @@ Sortiert alle Files aus `incoming/` nach Typ:
 
 Zeigt Vorschau und fragt vor dem Sortieren.
 
-### 7️⃣ Browse Sorted Files
+### 7️⃣ WebM → MP4 Convert
+
+Konvertiert alle `.webm` Videos zu `.mp4`:
+- Scannt `sorted/videos/` und `sorted/gifs/`
+- Nutzt ffmpeg für Konvertierung
+- Optionen:
+  - Original behalten
+  - Original löschen (spart Speicher)
+
+**Benötigt:** ffmpeg installiert
+
+### 8️⃣ Browse Sorted Files
 
 Zeigt Anzahl der Files pro Kategorie + Pfad.
 
-### 8️⃣ Stats anzeigen
+### 9️⃣ Stats anzeigen
 
 Übersicht:
 - Wie viele Files in `incoming/` warten
 - Wie viele Files bereits sortiert sind (gesamt + pro Kategorie)
 
-### 9️⃣ Tag-Presets verwalten
+### 0️⃣ Tag-Presets verwalten
 
 Speichere häufig verwendete Tag-Kombinationen:
 - **Hinzufügen:** Neue Presets erstellen

@@ -18,8 +18,13 @@ Interactive CLI tool for downloading and organizing media from multiple sources.
   
 - 📦 **Auto-Sort**
   - Automatic file type detection
-  - Sorts images/videos into organized folders
+  - Sorts images/videos/GIFs into organized folders
   - Handles duplicates automatically
+  
+- 🎬 **WebM → MP4 Converter**
+  - Batch convert all .webm videos to .mp4
+  - Optional: Keep or delete originals
+  - Requires ffmpeg (auto-checked)
   
 - 🎨 **Interactive CLI**
   - Colorful menu interface
@@ -76,9 +81,10 @@ mm.bat
 4 - Download (Twitter/X)
 5 - Download (Custom URL)
 6 - Auto-Sort
-7 - Browse Sorted Files
-8 - Stats
-9 - Tag-Presets
+7 - WebM → MP4 Convert
+8 - Browse Sorted Files
+9 - Stats
+0 - Tag-Presets
 q - Quit
 ```
 
@@ -143,6 +149,20 @@ media-manager/
 
 - Python 3.6+
 - `gallery-dl` (auto-installed on first use)
+- `ffmpeg` (optional, for WebM → MP4 conversion)
+
+**Install ffmpeg:**
+```bash
+# Windows
+winget install ffmpeg
+# or download from: https://ffmpeg.org/download.html
+
+# Linux
+sudo apt install ffmpeg
+
+# Mac
+brew install ffmpeg
+```
 
 ## 💡 Supported Sites
 
