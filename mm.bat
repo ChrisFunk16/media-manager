@@ -1,4 +1,4 @@
 @echo off
 cd /d "%~dp0"
-python media-manager.py
+py -3 media-manager.py
 pause
