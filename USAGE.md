@@ -62,6 +62,7 @@ Einfach URL pasten - gallery-dl erkennt die Site automatisch.
 
 Sortiert alle Files aus `incoming/` nach Typ:
 - Bilder → `sorted/images/`
+- GIFs → `sorted/gifs/`
 - Videos → `sorted/videos/`
 
 Zeigt Vorschau und fragt vor dem Sortieren.

@@ -35,7 +35,7 @@ git clone https://github.com/ChrisFunk16/media-manager.git
 cd media-manager
 
 # Create data folders
-mkdir -p incoming sorted/{images,videos,hypno}
+mkdir -p incoming sorted/{images,gifs,videos,hypno}
 
 # Run it!
 ./mm
@@ -49,7 +49,7 @@ cd media-manager
 
 # Create data folders
 mkdir incoming
-mkdir sorted\images sorted\videos sorted\hypno
+mkdir sorted\images sorted\gifs sorted\videos sorted\hypno
 
 # Run it!
 mm.bat
@@ -129,8 +129,9 @@ See `TAG-PRESETS.md` for details.
 media-manager/
 ├── incoming/          # Drop files here (manual or downloaded)
 ├── sorted/
-│   ├── images/       # Auto-sorted images
-│   ├── videos/       # Auto-sorted videos
+│   ├── images/       # Auto-sorted images (jpg, png, webp, etc.)
+│   ├── gifs/         # Auto-sorted GIFs
+│   ├── videos/       # Auto-sorted videos (mp4, m4v, webm, etc.)
 │   └── hypno/        # Manual category
 ├── scripts/          # Backend tools
 ├── media-manager.py  # Main CLI

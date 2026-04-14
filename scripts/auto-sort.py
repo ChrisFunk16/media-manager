@@ -16,14 +16,17 @@ INCOMING = BASE_DIR / "incoming"
 SORTED = BASE_DIR / "sorted"
 
 # Kategorien
-IMAGE_EXTS = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'}
+IMAGE_EXTS = {'.jpg', '.jpeg', '.png', '.webp', '.bmp', '.svg'}
+GIF_EXTS = {'.gif'}
 VIDEO_EXTS = {'.mp4', '.mkv', '.avi', '.mov', '.webm', '.flv', '.wmv', '.m4v'}
 
 def get_category(file_path):
     """Bestimmt Kategorie basierend auf Extension"""
     ext = file_path.suffix.lower()
     
-    if ext in IMAGE_EXTS:
+    if ext in GIF_EXTS:
+        return "gifs"
+    elif ext in IMAGE_EXTS:
         return "images"
     elif ext in VIDEO_EXTS:
         return "videos"
@@ -31,7 +34,9 @@ def get_category(file_path):
         # Fallback: MIME-Type checken
         mime, _ = mimetypes.guess_type(str(file_path))
         if mime:
-            if mime.startswith('image/'):
+            if mime == 'image/gif':
+                return "gifs"
+            elif mime.startswith('image/'):
                 return "images"
             elif mime.startswith('video/'):
                 return "videos"

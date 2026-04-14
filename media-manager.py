@@ -299,7 +299,7 @@ def browse_sorted():
     print_header()
     print(f"{Colors.BOLD}Sorted Files{Colors.END}\n")
     
-    categories = ['images', 'videos', 'hypno']
+    categories = ['images', 'gifs', 'videos', 'hypno']
     
     for cat in categories:
         cat_path = SORTED / cat
@@ -325,7 +325,7 @@ def show_stats():
     
     # Sorted
     stats = {}
-    for cat in ['images', 'videos', 'hypno']:
+    for cat in ['images', 'gifs', 'videos', 'hypno']:
         cat_path = SORTED / cat
         if cat_path.exists():
             stats[cat] = len([f for f in cat_path.glob('*') if f.is_file()])
@@ -337,6 +337,7 @@ def show_stats():
     print(f"📥 Incoming:       {incoming_count} files")
     print(f"📊 Sorted (total): {total_sorted} files")
     print(f"   ├─ Images:      {stats['images']}")
+    print(f"   ├─ GIFs:        {stats['gifs']}")
     print(f"   ├─ Videos:      {stats['videos']}")
     print(f"   └─ Hypno:       {stats['hypno']}")
     
