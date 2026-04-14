@@ -75,11 +75,12 @@ def print_menu():
     print(f"  {Colors.GREEN}1{Colors.END} - Download (Reddit)")
     print(f"  {Colors.GREEN}2{Colors.END} - Download (Rule34.xxx)")
     print(f"  {Colors.GREEN}3{Colors.END} - Download (Redgifs)")
-    print(f"  {Colors.GREEN}4{Colors.END} - Download (Custom URL)")
-    print(f"  {Colors.GREEN}5{Colors.END} - Auto-Sort (incoming → sorted)")
-    print(f"  {Colors.GREEN}6{Colors.END} - Browse Sorted Files")
-    print(f"  {Colors.GREEN}7{Colors.END} - Stats anzeigen")
-    print(f"  {Colors.YELLOW}8{Colors.END} - Tag-Presets verwalten")
+    print(f"  {Colors.GREEN}4{Colors.END} - Download (Twitter/X)")
+    print(f"  {Colors.GREEN}5{Colors.END} - Download (Custom URL)")
+    print(f"  {Colors.GREEN}6{Colors.END} - Auto-Sort (incoming → sorted)")
+    print(f"  {Colors.GREEN}7{Colors.END} - Browse Sorted Files")
+    print(f"  {Colors.GREEN}8{Colors.END} - Stats anzeigen")
+    print(f"  {Colors.YELLOW}9{Colors.END} - Tag-Presets verwalten")
     print(f"  {Colors.RED}q{Colors.END} - Quit")
     print()
 
@@ -221,11 +222,46 @@ def download_redgifs():
         if url:
             download(url)
 
+def download_twitter():
+    clear()
+    print_header()
+    print(f"{Colors.BOLD}Twitter/X Download{Colors.END}\n")
+    print("Optionen:")
+    print("  1 - Einzelner Tweet")
+    print("  2 - User Timeline")
+    print("  3 - User Media (nur Bilder/Videos)")
+    print("  4 - User Likes")
+    print("  5 - Custom URL")
+    print()
+    
+    choice = input(f"{Colors.GREEN}Auswahl:{Colors.END} ").strip()
+    
+    if choice == "1":
+        tweet_url = input(f"{Colors.GREEN}Tweet URL:{Colors.END} ").strip()
+        if tweet_url:
+            download(tweet_url)
+    elif choice == "2":
+        username = input(f"{Colors.GREEN}Username (ohne @):{Colors.END} ").strip()
+        url = f"https://twitter.com/{username}"
+        download(url)
+    elif choice == "3":
+        username = input(f"{Colors.GREEN}Username (ohne @):{Colors.END} ").strip()
+        url = f"https://twitter.com/{username}/media"
+        download(url)
+    elif choice == "4":
+        username = input(f"{Colors.GREEN}Username (ohne @):{Colors.END} ").strip()
+        url = f"https://twitter.com/{username}/likes"
+        download(url)
+    elif choice == "5":
+        url = input(f"{Colors.GREEN}URL:{Colors.END} ").strip()
+        if url:
+            download(url)
+
 def download_custom():
     clear()
     print_header()
     print(f"{Colors.BOLD}Custom URL Download{Colors.END}\n")
-    print("Unterstützt: Instagram, Twitter, Imgur, DeviantArt, Gelbooru, etc.")
+    print("Unterstützt: Instagram, Imgur, DeviantArt, Gelbooru, Pixiv, etc.")
     print()
     
     url = input(f"{Colors.GREEN}URL eingeben:{Colors.END} ").strip()
@@ -408,14 +444,16 @@ def main():
         elif choice == '3':
             download_redgifs()
         elif choice == '4':
-            download_custom()
+            download_twitter()
         elif choice == '5':
-            auto_sort()
+            download_custom()
         elif choice == '6':
-            browse_sorted()
+            auto_sort()
         elif choice == '7':
-            show_stats()
+            browse_sorted()
         elif choice == '8':
+            show_stats()
+        elif choice == '9':
             manage_tag_presets()
         elif choice == 'q':
             print(f"\n{Colors.YELLOW}Bye!{Colors.END}")

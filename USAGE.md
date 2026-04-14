@@ -37,13 +37,28 @@ Vier Modi:
 - **Search/Tags:** Suchbegriff eingeben
 - **Custom URL:** Komplette URL einfügen
 
-### 4️⃣ Download (Custom URL)
+### 4️⃣ Download (Twitter/X)
 
-Für alle anderen Sites (Instagram, Twitter, Imgur, DeviantArt, Gelbooru, etc.)
+Fünf Modi:
+- **Einzelner Tweet:** Tweet-URL einfügen
+- **User Timeline:** Alle Tweets eines Users
+- **User Media:** Nur Tweets mit Bildern/Videos
+- **User Likes:** Gelikte Tweets eines Users
+- **Custom URL:** Komplette URL einfügen
+
+**Beispiel:**
+```
+Username: elonmusk
+→ Lädt Timeline/Media/Likes
+```
+
+### 5️⃣ Download (Custom URL)
+
+Für alle anderen Sites (Instagram, Imgur, DeviantArt, Gelbooru, Pixiv, etc.)
 
 Einfach URL pasten - gallery-dl erkennt die Site automatisch.
 
-### 5️⃣ Auto-Sort
+### 6️⃣ Auto-Sort
 
 Sortiert alle Files aus `incoming/` nach Typ:
 - Bilder → `sorted/images/`
@@ -51,17 +66,17 @@ Sortiert alle Files aus `incoming/` nach Typ:
 
 Zeigt Vorschau und fragt vor dem Sortieren.
 
-### 6️⃣ Browse Sorted Files
+### 7️⃣ Browse Sorted Files
 
 Zeigt Anzahl der Files pro Kategorie + Pfad.
 
-### 7️⃣ Stats anzeigen
+### 8️⃣ Stats anzeigen
 
 Übersicht:
 - Wie viele Files in `incoming/` warten
 - Wie viele Files bereits sortiert sind (gesamt + pro Kategorie)
 
-### 8️⃣ Tag-Presets verwalten
+### 9️⃣ Tag-Presets verwalten
 
 Speichere häufig verwendete Tag-Kombinationen:
 - **Hinzufügen:** Neue Presets erstellen
@@ -85,9 +100,9 @@ Details: `TAG-PRESETS.md`
 **Typischer Ablauf:**
 
 1. `./mm` starten
-2. `1`, `2` oder `3` - Download von Reddit/Rule34/Redgifs
-3. `5` - Auto-Sort laufen lassen
-4. `6` oder `7` - Checken was angekommen ist
+2. `1`, `2`, `3` oder `4` - Download von Reddit/Rule34/Redgifs/Twitter
+3. `6` - Auto-Sort laufen lassen
+4. `7` oder `8` - Checken was angekommen ist
 5. Fertig!
 
 **Hypno-Files:** Manuell nach `sorted/hypno/` verschieben (vorerst)

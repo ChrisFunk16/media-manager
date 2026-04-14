@@ -74,7 +74,11 @@ def main():
         print("\n  # Redgifs")
         print("  media-downloader.py https://redgifs.com/watch/uniquegifid")
         print("  media-downloader.py https://redgifs.com/users/username")
-        print("\n  # Andere (Instagram, Twitter, Imgur, Gelbooru, etc.)")
+        print("\n  # Twitter/X")
+        print("  media-downloader.py https://twitter.com/username/status/123456")
+        print("  media-downloader.py https://twitter.com/username")
+        print("  media-downloader.py https://twitter.com/username/media")
+        print("\n  # Andere (Instagram, Imgur, Gelbooru, Pixiv, etc.)")
         print("  media-downloader.py <URL>")
         sys.exit(1)
     

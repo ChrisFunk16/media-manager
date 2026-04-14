@@ -9,6 +9,11 @@ https://reddit.com/r/pics/comments/abc123/
 https://redgifs.com/watch/uniquegifid
 https://redgifs.com/users/username
 
+# Twitter/X Beispiele
+https://twitter.com/username/status/123456
+https://twitter.com/username/media
+https://twitter.com/username/likes
+
 # Rule34 Beispiele
 https://rule34.xxx/index.php?page=post&s=view&id=12345
 https://rule34.xxx/index.php?page=post&s=list&tags=tag1+tag2

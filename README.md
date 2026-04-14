@@ -8,6 +8,7 @@ Interactive CLI tool for downloading and organizing media from multiple sources.
   - Reddit (subreddits, posts, users)
   - Rule34.xxx (posts, tag searches)
   - Redgifs (GIFs, users, searches)
+  - Twitter/X (tweets, timelines, media, likes)
   - 100+ other sites via gallery-dl
   
 - 🏷️ **Tag Preset System**
@@ -72,11 +73,12 @@ mm.bat
 1 - Download (Reddit)
 2 - Download (Rule34.xxx)
 3 - Download (Redgifs)
-4 - Download (Custom URL)
-5 - Auto-Sort
-6 - Browse Sorted Files
-7 - Stats
-8 - Tag-Presets
+4 - Download (Twitter/X)
+5 - Download (Custom URL)
+6 - Auto-Sort
+7 - Browse Sorted Files
+8 - Stats
+9 - Tag-Presets
 q - Quit
 ```
 
@@ -144,11 +146,12 @@ media-manager/
 ## 💡 Supported Sites
 
 Via [gallery-dl](https://github.com/mikf/gallery-dl):
-- Reddit
-- Rule34.xxx, Gelbooru, Danbooru, all Booru sites
+- Reddit (subreddits, posts, users)
+- Rule34.xxx, Gelbooru, Danbooru (all Booru sites)
 - Redgifs, Gfycat
-- Instagram, Twitter, Imgur
-- DeviantArt, Tumblr, Pixiv
+- Twitter/X (tweets, timelines, media, likes)
+- Instagram, Imgur, Tumblr
+- DeviantArt, Pixiv
 - 100+ more
 
 Full list: https://github.com/mikf/gallery-dl/blob/master/docs/supportedsites.md
