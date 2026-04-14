@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 Media Manager - Interaktive CLI
 Alles an einem Ort: Download, Sortieren, Browse

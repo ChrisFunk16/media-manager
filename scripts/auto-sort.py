@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 Auto-Sortierer für Media Files
 Überwacht incoming/ und sortiert nach Dateityp
