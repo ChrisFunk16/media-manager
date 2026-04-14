@@ -58,9 +58,13 @@ That's it! The tool will auto-install `gallery-dl` when you first download somet
 
 ## 📖 Usage
 
-**Launch the menu:**
+**Interactive Menu:**
 ```bash
+# Linux/Mac
 ./mm
+
+# Windows
+mm.bat
 ```
 
 **Menu options:**
@@ -75,6 +79,26 @@ That's it! The tool will auto-install `gallery-dl` when you first download somet
 8 - Tag-Presets
 q - Quit
 ```
+
+**Batch Download (Multiple URLs):**
+
+1. Create `urls.txt` with one URL per line:
+   ```
+   https://reddit.com/r/wallpapers
+   https://redgifs.com/watch/somegif
+   https://rule34.xxx/...
+   ```
+
+2. Run batch downloader:
+   ```bash
+   # Linux/Mac
+   python3 batch-download.py
+   
+   # Windows
+   batch.bat
+   ```
+
+Perfect for downloading many links at once!
 
 ## 🏷️ Tag Presets
 

@@ -2,6 +2,9 @@
 incoming/
 sorted/
 
+# User files
+urls.txt
+
 # Python cache
 __pycache__/
 *.pyc
