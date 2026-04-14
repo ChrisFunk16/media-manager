@@ -37,6 +37,7 @@ def convert_webm_to_mp4(webm_file, delete_original=True):
     cmd = [
         'ffmpeg',
         '-i', str(webm_file),
+        '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2',  # Ensure even dimensions
         '-c:v', 'libx264',      # H.264 codec
         '-c:a', 'aac',          # AAC audio
         '-strict', 'experimental',
