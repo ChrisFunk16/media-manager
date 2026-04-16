@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-WebM to MP4 Converter
-Konvertiert alle .webm Videos zu .mp4 (benötigt ffmpeg)
+Video Converter (WebM/M4V → MP4)
+Konvertiert .webm und .m4v Videos zu .mp4 (benötigt ffmpeg)
 """
 
 import os
@@ -61,19 +61,21 @@ def convert_webm_to_mp4(webm_file, delete_original=True):
         print(f"❌ Fehler bei {webm_file.name}: {e}")
         return False
 
-def find_webm_files():
-    """Findet alle .webm Dateien"""
-    webm_files = []
+def find_files_to_convert():
+    """Findet alle .webm und .m4v Dateien"""
+    files_to_convert = []
     
     # Check videos folder
     if SORTED_VIDEOS.exists():
-        webm_files.extend(SORTED_VIDEOS.glob('*.webm'))
+        files_to_convert.extend(SORTED_VIDEOS.glob('*.webm'))
+        files_to_convert.extend(SORTED_VIDEOS.glob('*.m4v'))
     
     # Check gifs folder (manche WebMs sind animiert)
     if SORTED_GIFS.exists():
-        webm_files.extend(SORTED_GIFS.glob('*.webm'))
+        files_to_convert.extend(SORTED_GIFS.glob('*.webm'))
+        files_to_convert.extend(SORTED_GIFS.glob('*.m4v'))
     
-    return webm_files
+    return files_to_convert
 
 def main():
     # Check ffmpeg
@@ -86,14 +88,14 @@ def main():
         print("  Mac: brew install ffmpeg")
         sys.exit(1)
     
-    # Find WebM files
-    webm_files = find_webm_files()
+    # Find files to convert
+    files = find_files_to_convert()
     
-    if not webm_files:
-        print("✅ Keine WebM-Dateien gefunden")
+    if not files:
+        print("✅ Keine Dateien zum Konvertieren gefunden (WebM/M4V)")
         return
     
-    print(f"📦 Gefunden: {len(webm_files)} WebM-Dateien\n")
+    print(f"📦 Gefunden: {len(files)} Dateien (WebM/M4V)\n")
     
     # Ask for confirmation
     print("Optionen:")
@@ -111,11 +113,11 @@ def main():
     
     # Convert all
     success_count = 0
-    for webm_file in webm_files:
-        if convert_webm_to_mp4(webm_file, delete_original):
+    for file in files:
+        if convert_webm_to_mp4(file, delete_original):
             success_count += 1
     
-    print(f"\n📊 Fertig: {success_count}/{len(webm_files)} konvertiert")
+    print(f"\n📊 Fertig: {success_count}/{len(files)} konvertiert")
 
 if __name__ == "__main__":
     main()
