@@ -1,11 +1,11 @@
 # Sync Media zu Handy (nur neue/geänderte Files)
 # Windows PowerShell Version
 
-$PHONE_IP = "192.168.1.50"      # <-- Deine Handy IP hier
+$PHONE_IP = "192.168.178.64"      # <-- Deine Handy IP hier
 $PHONE_USER = "u0_a123"         # <-- Termux User (meist u0_aXXX)
 $PHONE_PORT = "8022"            # Termux SSH Port
 
-$LOCAL_DIR = "$HOME\.openclaw\workspace\media-collection\sorted\"
+$LOCAL_DIR = "$env:USERPROFILE\media-manager\sorted\"
 $PHONE_DIR = "/storage/emulated/0/Media/"
 
 Write-Host "📱 Syncing to phone..." -ForegroundColor Cyan
