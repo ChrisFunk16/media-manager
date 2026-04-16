@@ -280,7 +280,11 @@ def auto_sort():
         input(f"\n{Colors.BLUE}Enter drücken...{Colors.END}")
         return
     
-    files = [f for f in INCOMING.iterdir() if f.is_file()]
+    # Rekursiv suchen (wie auto-sort.py es macht!)
+    files = []
+    for root, dirs, filenames in os.walk(INCOMING):
+        for filename in filenames:
+            files.append(Path(root) / filename)
     
     if not files:
         print(f"{Colors.YELLOW}ℹ️ Keine Files zum Sortieren{Colors.END}")
@@ -328,10 +332,11 @@ def show_stats():
     print_header()
     print(f"{Colors.BOLD}Statistiken{Colors.END}\n")
     
-    # Incoming
+    # Incoming (rekursiv!)
     incoming_count = 0
     if INCOMING.exists():
-        incoming_count = len([f for f in INCOMING.iterdir() if f.is_file()])
+        for root, dirs, filenames in os.walk(INCOMING):
+            incoming_count += len(filenames)
     
     # Sorted
     stats = {}
