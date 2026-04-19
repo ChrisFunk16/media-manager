@@ -2,7 +2,7 @@
 # Windows PowerShell Version
 
 $PHONE_IP = "192.168.178.64"      # <-- Deine Handy IP hier
-$PHONE_USER = "u0_a123"         # <-- Termux User (meist u0_aXXX)
+$PHONE_USER = "u0_a377"         # <-- Termux User (meist u0_aXXX)
 $PHONE_PORT = "8022"            # Termux SSH Port
 
 $LOCAL_DIR = "$env:USERPROFILE\media-manager\sorted\"
