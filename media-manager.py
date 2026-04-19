@@ -81,6 +81,7 @@ def print_menu():
     print(f"  {Colors.GREEN}7{Colors.END} - WebM → MP4 konvertieren")
     print(f"  {Colors.GREEN}8{Colors.END} - Browse Sorted Files")
     print(f"  {Colors.GREEN}9{Colors.END} - Stats anzeigen")
+    print(f"  {Colors.YELLOW}l{Colors.END} - Link Monitor starten")
     print(f"  {Colors.YELLOW}0{Colors.END} - Tag-Presets verwalten")
     print(f"  {Colors.RED}q{Colors.END} - Quit")
     print()
@@ -358,6 +359,24 @@ def show_stats():
     
     input(f"\n{Colors.BLUE}Enter drücken...{Colors.END}")
 
+def start_link_monitor():
+    """Startet Link Monitor"""
+    clear()
+    print_header()
+    print(f"{Colors.BOLD}Link Monitor{Colors.END}\n")
+    print("Überwacht deine Zwischenablage und speichert automatisch kopierte Links.")
+    print(f"Ziel: {BASE_DIR / 'links.txt'}\n")
+    print(f"{Colors.YELLOW}ℹ️ Läuft im Vordergrund - neues Terminal für andere Aufgaben öffnen{Colors.END}")
+    print(f"{Colors.YELLOW}ℹ️ Beenden mit Strg+C{Colors.END}\n")
+    
+    input(f"{Colors.GREEN}Enter drücken zum Starten...{Colors.END}")
+    
+    cmd = [sys.executable, str(SCRIPTS / "link-monitor.py")]
+    subprocess.run(cmd)
+    
+    print()
+    input(f"{Colors.BLUE}Enter drücken um fortzufahren...{Colors.END}")
+
 def manage_tag_presets():
     """Tag-Preset Management"""
     while True:
@@ -471,6 +490,8 @@ def main():
             browse_sorted()
         elif choice == '9':
             show_stats()
+        elif choice == 'l':
+            start_link_monitor()
         elif choice == '0':
             manage_tag_presets()
         elif choice == 'q':
