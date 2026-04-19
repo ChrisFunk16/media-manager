@@ -10,7 +10,6 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).parent
 SCRIPTS = BASE_DIR / "scripts"
-URLS_FILE = BASE_DIR / "urls.txt"
 
 def download(url):
     """Download single URL"""
@@ -18,17 +17,31 @@ def download(url):
     subprocess.run(cmd)
 
 def main():
-    if not URLS_FILE.exists():
-        print("❌ urls.txt nicht gefunden!")
-        print(f"\nErstelle {URLS_FILE} mit URLs (eine pro Zeile)")
+    # Check beide Dateien (urls.txt und links.txt)
+    urls_file = BASE_DIR / "urls.txt"
+    links_file = BASE_DIR / "links.txt"
+    
+    source_file = None
+    if urls_file.exists():
+        source_file = urls_file
+    elif links_file.exists():
+        source_file = links_file
+    
+    if not source_file:
+        print("❌ Keine URL-Datei gefunden!")
+        print(f"\nErstelle eine der Dateien:")
+        print(f"  • {urls_file} (manuell)")
+        print(f"  • {links_file} (via Link Monitor)")
         print("\nBeispiel urls.txt:")
         print("https://reddit.com/r/wallpapers")
         print("https://redgifs.com/watch/somegif")
         print("https://rule34.xxx/index.php?page=post&s=list&tags=tag1")
         sys.exit(1)
     
+    print(f"📥 Lade URLs aus: {source_file.name}\n")
+    
     # Read URLs
-    with open(URLS_FILE, 'r', encoding='utf-8') as f:
+    with open(source_file, 'r', encoding='utf-8') as f:
         urls = [line.strip() for line in f if line.strip() and not line.startswith('#')]
     
     if not urls:

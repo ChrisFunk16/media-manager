@@ -77,6 +77,7 @@ def print_menu():
     print(f"  {Colors.GREEN}3{Colors.END} - Download (Redgifs)")
     print(f"  {Colors.GREEN}4{Colors.END} - Download (Twitter/X)")
     print(f"  {Colors.GREEN}5{Colors.END} - Download (Custom URL)")
+    print(f"  {Colors.GREEN}b{Colors.END} - Batch Download (urls.txt/links.txt)")
     print(f"  {Colors.GREEN}6{Colors.END} - Auto-Sort (incoming → sorted)")
     print(f"  {Colors.GREEN}7{Colors.END} - WebM → MP4 konvertieren")
     print(f"  {Colors.GREEN}8{Colors.END} - Browse Sorted Files")
@@ -359,6 +360,58 @@ def show_stats():
     
     input(f"\n{Colors.BLUE}Enter drücken...{Colors.END}")
 
+def batch_download():
+    """Batch Download aus urls.txt oder links.txt"""
+    clear()
+    print_header()
+    print(f"{Colors.BOLD}Batch Download{Colors.END}\n")
+    
+    urls_file = BASE_DIR / "urls.txt"
+    links_file = BASE_DIR / "links.txt"
+    
+    # Check welche Datei existiert
+    source_file = None
+    if urls_file.exists():
+        source_file = urls_file
+    elif links_file.exists():
+        source_file = links_file
+    
+    if not source_file:
+        print(f"{Colors.RED}❌ Keine URLs gefunden!{Colors.END}\n")
+        print("Erstelle eine der Dateien:")
+        print(f"  • {urls_file.name} (manuell erstellt)")
+        print(f"  • {links_file.name} (via Link Monitor)")
+        print("\nFormat: Eine URL pro Zeile")
+        input(f"\n{Colors.BLUE}Enter drücken...{Colors.END}")
+        return
+    
+    # URLs laden
+    with open(source_file, 'r', encoding='utf-8') as f:
+        urls = [line.strip() for line in f if line.strip() and not line.startswith('#')]
+    
+    if not urls:
+        print(f"{Colors.RED}❌ Keine URLs in {source_file.name}{Colors.END}")
+        input(f"\n{Colors.BLUE}Enter drücken...{Colors.END}")
+        return
+    
+    print(f"📥 Quelle: {source_file.name}")
+    print(f"📊 URLs gefunden: {len(urls)}\n")
+    
+    # Preview erste 5 URLs
+    print(f"{Colors.BOLD}Vorschau:{Colors.END}")
+    for i, url in enumerate(urls[:5], 1):
+        print(f"  {i}. {url[:60]}...")
+    if len(urls) > 5:
+        print(f"  ... und {len(urls) - 5} weitere")
+    
+    print()
+    confirm = input(f"{Colors.GREEN}Alle herunterladen? (y/n):{Colors.END} ").strip().lower()
+    
+    if confirm == 'y':
+        cmd = [sys.executable, str(BASE_DIR / "batch-download.py")]
+        subprocess.run(cmd)
+        input(f"\n{Colors.BLUE}Enter drücken...{Colors.END}")
+
 def start_link_monitor():
     """Startet Link Monitor"""
     clear()
@@ -482,6 +535,8 @@ def main():
             download_twitter()
         elif choice == '5':
             download_custom()
+        elif choice == 'b':
+            batch_download()
         elif choice == '6':
             auto_sort()
         elif choice == '7':
