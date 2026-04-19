@@ -78,6 +78,7 @@ def print_menu():
     print(f"  {Colors.GREEN}4{Colors.END} - Download (Twitter/X)")
     print(f"  {Colors.GREEN}5{Colors.END} - Download (Custom URL)")
     print(f"  {Colors.GREEN}b{Colors.END} - Batch Download (urls.txt/links.txt)")
+    print(f"  {Colors.BLUE}a{Colors.END} - 🚀 Alles (Download → Sort → Convert)")
     print(f"  {Colors.GREEN}6{Colors.END} - Auto-Sort (incoming → sorted)")
     print(f"  {Colors.GREEN}7{Colors.END} - WebM → MP4 konvertieren")
     print(f"  {Colors.GREEN}8{Colors.END} - Browse Sorted Files")
@@ -414,6 +415,87 @@ def batch_download():
         subprocess.run(cmd)
         input(f"\n{Colors.BLUE}Enter drücken...{Colors.END}")
 
+def all_in_one():
+    """Download → Sort → Convert - kompletter Workflow"""
+    clear()
+    print_header()
+    print(f"{Colors.BOLD}🚀 Kompletter Workflow{Colors.END}\n")
+    print(f"{Colors.BLUE}Schritte:{Colors.END}")
+    print("  1️⃣  Batch Download (links.txt/urls.txt)")
+    print("  2️⃣  Auto-Sort (incoming → sorted)")
+    print("  3️⃣  WebM → MP4 Konvertierung")
+    print()
+    
+    # Check ob URLs vorhanden
+    urls_file = BASE_DIR / "urls.txt"
+    links_file = BASE_DIR / "links.txt"
+    
+    source_file = None
+    if links_file.exists():
+        source_file = links_file
+    elif urls_file.exists():
+        source_file = urls_file
+    
+    if not source_file:
+        print(f"{Colors.RED}❌ Keine URLs gefunden!{Colors.END}")
+        print("\nErstelle erst URLs:")
+        print(f"  • Link Monitor starten ({Colors.YELLOW}l{Colors.END})")
+        print(f"  • Oder manuell urls.txt erstellen")
+        input(f"\n{Colors.BLUE}Enter drücken...{Colors.END}")
+        return
+    
+    # URLs preview
+    with open(source_file, 'r', encoding='utf-8') as f:
+        urls = [line.strip() for line in f if line.strip() and not line.startswith('#')]
+    
+    if not urls:
+        print(f"{Colors.RED}❌ {source_file.name} ist leer{Colors.END}")
+        input(f"\n{Colors.BLUE}Enter drücken...{Colors.END}")
+        return
+    
+    print(f"{Colors.GREEN}📥 {len(urls)} URLs in {source_file.name}{Colors.END}")
+    print()
+    confirm = input(f"{Colors.GREEN}Workflow starten? (y/n):{Colors.END} ").strip().lower()
+    
+    if confirm != 'y':
+        return
+    
+    # Step 1: Batch Download
+    print(f"\n{Colors.BOLD}{'='*60}{Colors.END}")
+    print(f"{Colors.BOLD}1️⃣  BATCH DOWNLOAD{Colors.END}")
+    print(f"{Colors.BOLD}{'='*60}{Colors.END}\n")
+    
+    cmd = [sys.executable, str(BASE_DIR / "batch-download.py")]
+    result = subprocess.run(cmd)
+    
+    if result.returncode != 0:
+        print(f"\n{Colors.RED}❌ Batch Download fehlgeschlagen{Colors.END}")
+        input(f"\n{Colors.BLUE}Enter drücken...{Colors.END}")
+        return
+    
+    # Step 2: Auto-Sort
+    print(f"\n{Colors.BOLD}{'='*60}{Colors.END}")
+    print(f"{Colors.BOLD}2️⃣  AUTO-SORT{Colors.END}")
+    print(f"{Colors.BOLD}{'='*60}{Colors.END}\n")
+    
+    cmd = [sys.executable, str(SCRIPTS / "auto-sort.py")]
+    subprocess.run(cmd)
+    
+    # Step 3: WebM Conversion
+    print(f"\n{Colors.BOLD}{'='*60}{Colors.END}")
+    print(f"{Colors.BOLD}3️⃣  WEBM → MP4 KONVERTIERUNG{Colors.END}")
+    print(f"{Colors.BOLD}{'='*60}{Colors.END}\n")
+    
+    cmd = [sys.executable, str(SCRIPTS / "convert-webm.py")]
+    subprocess.run(cmd)
+    
+    # Fertig
+    print(f"\n{Colors.BOLD}{'='*60}{Colors.END}")
+    print(f"{Colors.GREEN}✅ WORKFLOW ABGESCHLOSSEN{Colors.END}")
+    print(f"{Colors.BOLD}{'='*60}{Colors.END}\n")
+    
+    input(f"{Colors.BLUE}Enter drücken...{Colors.END}")
+
 def start_link_monitor():
     """Startet Link Monitor"""
     clear()
@@ -539,6 +621,8 @@ def main():
             download_custom()
         elif choice == 'b':
             batch_download()
+        elif choice == 'a':
+            all_in_one()
         elif choice == '6':
             auto_sort()
         elif choice == '7':
