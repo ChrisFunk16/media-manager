@@ -17,21 +17,21 @@ def download(url):
     subprocess.run(cmd)
 
 def main():
-    # Check beide Dateien (urls.txt und links.txt)
+    # Check beide Dateien (links.txt bevorzugt, da aktueller vom Link Monitor)
     urls_file = BASE_DIR / "urls.txt"
     links_file = BASE_DIR / "links.txt"
     
     source_file = None
-    if urls_file.exists():
-        source_file = urls_file
-    elif links_file.exists():
+    if links_file.exists():
         source_file = links_file
+    elif urls_file.exists():
+        source_file = urls_file
     
     if not source_file:
         print("❌ Keine URL-Datei gefunden!")
         print(f"\nErstelle eine der Dateien:")
-        print(f"  • {urls_file} (manuell)")
         print(f"  • {links_file} (via Link Monitor)")
+        print(f"  • {urls_file} (manuell)")
         print("\nBeispiel urls.txt:")
         print("https://reddit.com/r/wallpapers")
         print("https://redgifs.com/watch/somegif")
@@ -45,7 +45,7 @@ def main():
         urls = [line.strip() for line in f if line.strip() and not line.startswith('#')]
     
     if not urls:
-        print("❌ Keine URLs in urls.txt gefunden!")
+        print(f"❌ Keine URLs in {source_file.name} gefunden!")
         sys.exit(1)
     
     print(f"📥 Gefunden: {len(urls)} URLs\n")
@@ -57,6 +57,12 @@ def main():
         download(url)
     
     print(f"\n✅ Fertig! {len(urls)} URLs heruntergeladen")
+    
+    # Lösche verarbeitete URLs aus der Datei
+    print(f"\n🗑️ Räume {source_file.name} auf...")
+    source_file.unlink()  # Datei löschen
+    print(f"✅ {source_file.name} geleert")
+    
     print("\nJetzt Auto-Sort laufen lassen:")
     print("  python scripts/auto-sort.py")
 

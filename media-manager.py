@@ -369,12 +369,12 @@ def batch_download():
     urls_file = BASE_DIR / "urls.txt"
     links_file = BASE_DIR / "links.txt"
     
-    # Check welche Datei existiert
+    # Check welche Datei existiert (links.txt bevorzugt)
     source_file = None
-    if urls_file.exists():
-        source_file = urls_file
-    elif links_file.exists():
+    if links_file.exists():
         source_file = links_file
+    elif urls_file.exists():
+        source_file = urls_file
     
     if not source_file:
         print(f"{Colors.RED}❌ Keine URLs gefunden!{Colors.END}\n")
@@ -404,6 +404,8 @@ def batch_download():
     if len(urls) > 5:
         print(f"  ... und {len(urls) - 5} weitere")
     
+    print()
+    print(f"{Colors.YELLOW}ℹ️ Nach dem Download wird {source_file.name} geleert{Colors.END}")
     print()
     confirm = input(f"{Colors.GREEN}Alle herunterladen? (y/n):{Colors.END} ").strip().lower()
     
