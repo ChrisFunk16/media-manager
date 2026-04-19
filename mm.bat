@@ -1,4 +1,4 @@
 @echo off
+REM Media Manager Launcher (Windows)
 cd /d "%~dp0"
-py -3 media-manager.py
-pause
+python3 media-manager.py
