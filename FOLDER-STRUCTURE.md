@@ -27,20 +27,19 @@ media-collection/
 # Tag-Builder: Bulk-Preset erstellen
 python3 scripts/tag-builder.py
 → Quick Presets → "Bulk - Balanced"
-→ Download (Limit: 5000)
+→ Download starten
+→ Destination: bulk/
+→ Subfolder: bulk_balanced (auto-vorgeschlagen)
+→ Limit: 5000
 
-# Downloads landen in: incoming/
-
-# Manuell nach bulk/ verschieben:
-mv incoming/* sorted/bulk/
-
-# Oder Auto-Sort mit bulk-Flag (TODO)
+# Downloads landen direkt in: sorted/bulk/bulk_balanced/
 ```
 
 **Charakteristik:**
 - Hohe Menge wichtiger als Perfektion
 - Quality-Filter: `-ai_generated -low_quality -duplicate`
 - Keine manuelle Review
+- Auto-Destination via Tag-Builder
 
 ---
 
@@ -57,19 +56,22 @@ python3 scripts/tag-builder.py
 → Mood: cute + pink
 → Outfit: lingerie
 → Quality: score:>20
-→ Download (Limit: 100)
+→ Download starten
+→ Destination: favorites/
+→ Subfolder: cute_pink_lingerie (auto-vorgeschlagen)
+→ Limit: 100
 
-# Downloads landen in: incoming/
+# Downloads landen direkt in: sorted/favorites/cute_pink_lingerie/
 
-# Review im Browser/Viewer
-# Gute → favorites/ verschieben
-# Rest → bulk/ oder löschen
+# Optional: Review im Browser/Viewer
+# Schlechte löschen, Beste behalten
 ```
 
 **Charakteristik:**
 - Qualität > Quantität
 - Score-Filter aktiv
-- Manuelle Review/Curation
+- Optional: Manuelle Review/Curation
+- Auto-Destination + thematische Subfolder
 
 ---
 
@@ -120,28 +122,29 @@ Bulk                    Favorites
 
 ---
 
-## Auto-Sort Anpassung
+## Auto-Sort vs Direct Download
 
-**Aktuell:** `auto-sort.py` sortiert nur nach Dateityp
-- images/ (Bilder)
-- gifs/ (GIFs)
-- videos/ (Videos)
+**Zwei Wege:**
 
-**Neu (geplant):**
-```python
-# Download-Source detection
-if from_rule34_bulk_preset:
-    → sorted/bulk/
-elif from_tag_builder_favorites:
-    → sorted/favorites/
-else:
-    → sorted/images/ (default)
+### 1. Direct Download (via Tag-Builder)
+```bash
+# Tag-Builder wählt Destination automatisch
+→ Downloads gehen direkt nach sorted/bulk/ oder sorted/favorites/
+→ Mit Subfolder für Organisation
+→ KEIN auto-sort.py nötig
 ```
 
-**Manuell vs Auto:**
-- Bulk: Manuell verschieben (nach Download)
-- Favorites: Manuell curate (Review erforderlich)
-- Default: Auto (wie bisher)
+### 2. Incoming + Auto-Sort (Link Monitor, experimentell)
+```bash
+# Downloads landen in incoming/
+→ auto-sort.py sortiert nach Typ (images/gifs/videos)
+→ Manuell curate → bulk/ oder favorites/
+```
+
+**Empfehlung:**
+- **Tag-Builder:** Direct download (bulk/favorites) ✅
+- **Link Monitor:** incoming → manuell sortieren
+- **auto-sort.py:** Nur für Dateityp-Sortierung (images/gifs/videos)
 
 ---
 

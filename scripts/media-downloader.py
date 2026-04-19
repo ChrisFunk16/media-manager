@@ -10,12 +10,14 @@ Lädt Bilder/Videos von verschiedenen Websites:
 Benötigt: gallery-dl (pip install gallery-dl)
 """
 
+import argparse
 import subprocess
 import sys
 from pathlib import Path
 
 BASE_DIR = Path(__file__).parent.parent
 INCOMING = BASE_DIR / "incoming"
+SORTED = BASE_DIR / "sorted"
 
 def check_gallery_dl():
     """Prüft ob gallery-dl installiert ist"""
@@ -38,15 +40,37 @@ def install_gallery_dl():
         print("❌ Installation fehlgeschlagen")
         return False
 
-def download(url):
-    """Lädt Medien von URL"""
-    INCOMING.mkdir(parents=True, exist_ok=True)
+def download(url, dest='incoming', subfolder=None):
+    """
+    Lädt Medien von URL
+    
+    Args:
+        url: Download-URL
+        dest: Zielordner (incoming/bulk/favorites/images)
+        subfolder: Optional subfolder name (z.B. preset name)
+    """
+    # Bestimme Zielpfad
+    if dest == 'bulk':
+        target_dir = SORTED / "bulk"
+    elif dest == 'favorites':
+        target_dir = SORTED / "favorites"
+    elif dest == 'images':
+        target_dir = SORTED / "images"
+    else:
+        target_dir = INCOMING
+    
+    # Subfolder hinzufügen wenn angegeben
+    if subfolder:
+        target_dir = target_dir / subfolder
+    
+    target_dir.mkdir(parents=True, exist_ok=True)
     
     print(f"⬇️ Lade: {url}")
+    print(f"📁 Ziel: {target_dir}")
     
     cmd = [
         'gallery-dl',
-        '--dest', str(INCOMING),
+        '--dest', str(target_dir),
         '--no-mtime',  # Keine Original-Timestamps
         url
     ]
@@ -62,25 +86,34 @@ def download(url):
     return True
 
 def main():
-    if len(sys.argv) < 2:
-        print("Usage: media-downloader.py <URL>")
-        print("\nBeispiele:")
-        print("  # Reddit")
-        print("  media-downloader.py https://reddit.com/r/pics/comments/...")
-        print("  media-downloader.py https://reddit.com/r/wallpapers")
-        print("\n  # Rule34.xxx")
-        print("  media-downloader.py https://rule34.xxx/index.php?page=post&s=view&id=12345")
-        print("  media-downloader.py 'https://rule34.xxx/index.php?page=post&s=list&tags=tag_name'")
-        print("\n  # Redgifs")
-        print("  media-downloader.py https://redgifs.com/watch/uniquegifid")
-        print("  media-downloader.py https://redgifs.com/users/username")
-        print("\n  # Twitter/X")
-        print("  media-downloader.py https://twitter.com/username/status/123456")
-        print("  media-downloader.py https://twitter.com/username")
-        print("  media-downloader.py https://twitter.com/username/media")
-        print("\n  # Andere (Instagram, Imgur, Gelbooru, Pixiv, etc.)")
-        print("  media-downloader.py <URL>")
-        sys.exit(1)
+    parser = argparse.ArgumentParser(
+        description='Universal Media Downloader',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Beispiele:
+  # Reddit
+  media-downloader.py https://reddit.com/r/wallpapers
+  
+  # Rule34 nach bulk/
+  media-downloader.py --dest bulk --subfolder sissy_general 'https://rule34.xxx/...'
+  
+  # Favorites mit Preset-Name
+  media-downloader.py --dest favorites --subfolder makeup_closeup 'https://...'
+  
+  # Default (incoming/)
+  media-downloader.py https://twitter.com/username/media
+        """
+    )
+    
+    parser.add_argument('url', help='Download-URL')
+    parser.add_argument('--dest', 
+                       choices=['incoming', 'bulk', 'favorites', 'images'],
+                       default='incoming',
+                       help='Zielordner (default: incoming)')
+    parser.add_argument('--subfolder',
+                       help='Subfolder name (z.B. preset name)')
+    
+    args = parser.parse_args()
     
     # Check/Install gallery-dl
     if not check_gallery_dl():
@@ -93,8 +126,7 @@ def main():
             print("Abgebrochen")
             sys.exit(1)
     
-    url = sys.argv[1]
-    download(url)
+    download(args.url, dest=args.dest, subfolder=args.subfolder)
 
 if __name__ == "__main__":
     main()

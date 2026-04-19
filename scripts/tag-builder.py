@@ -416,7 +416,7 @@ def save_as_preset(selected_tags):
     input(f"\n{C.G}Enter drücken...{C.E}")
 
 
-def start_download(selected_tags):
+def start_download(selected_tags, preset_name=None):
     """Startet Download mit aktueller Kombination"""
     if not selected_tags:
         print(f"\n{C.R}Keine Tags ausgewählt!{C.E}")
@@ -435,8 +435,46 @@ def start_download(selected_tags):
     print(f"{C.Y}Tags:{C.E} {' '.join(all_tags)}")
     print(f"{C.Y}URL:{C.E} {url}\n")
     
+    # Destination wählen
+    print(f"{C.B}Zielordner:{C.E}")
+    print(f"  {C.G}1{C.E} - incoming/ (Standard, später manuell sortieren)")
+    print(f"  {C.G}2{C.E} - bulk/ (Masse für Videos)")
+    print(f"  {C.G}3{C.E} - favorites/ (Curated, handverlesen)")
+    print(f"  {C.G}4{C.E} - images/ (Archiv)")
+    print()
+    
+    dest_choice = input(f"{C.G}Auswahl (Enter=1): {C.E}").strip() or '1'
+    
+    dest_map = {
+        '1': 'incoming',
+        '2': 'bulk',
+        '3': 'favorites',
+        '4': 'images'
+    }
+    
+    dest = dest_map.get(dest_choice, 'incoming')
+    
+    # Subfolder (nur bei bulk/favorites)
+    subfolder = None
+    if dest in ['bulk', 'favorites']:
+        print(f"\n{C.B}Unterordner-Name (für Organisation):{C.E}")
+        
+        # Default-Vorschlag aus Preset oder Tags
+        if preset_name:
+            suggestion = preset_name.lower().replace(' ', '_')
+        else:
+            # Nutze erste 2-3 Tags als Vorschlag
+            suggestion = '_'.join(all_tags[:3]).replace('+', '_').replace('-', 'no_')[:30]
+        
+        print(f"  Vorschlag: {C.Y}{suggestion}{C.E}")
+        print(f"  Enter = Vorschlag übernehmen, oder eigenen Namen eingeben")
+        print()
+        
+        subfolder_input = input(f"{C.G}Name: {C.E}").strip()
+        subfolder = subfolder_input if subfolder_input else suggestion
+    
     # Limit setzen?
-    print(f"{C.B}Download-Limit:{C.E}")
+    print(f"\n{C.B}Download-Limit:{C.E}")
     print(f"  {C.G}1{C.E} - Alle (kein Limit)")
     print(f"  {C.G}2{C.E} - Erste 100")
     print(f"  {C.G}3{C.E} - Erste 500")
@@ -465,16 +503,33 @@ def start_download(selected_tags):
             input("\nEnter drücken...")
             return
     
+    # Zusammenfassung
+    print(f"\n{C.BOLD}{'='*50}{C.E}")
+    print(f"{C.BOLD}Download-Konfiguration:{C.E}")
+    print(f"  URL: {url[:60]}...")
+    print(f"  Ziel: {C.G}{dest}/{C.E}{subfolder if subfolder else ''}")
+    print(f"  Limit: {limit if limit else 'Alle'}")
+    print(f"{C.BOLD}{'='*50}{C.E}\n")
+    
+    confirm = input(f"{C.Y}Fortfahren? (y/n): {C.E}").strip().lower()
+    if confirm != 'y':
+        print(f"{C.R}Abgebrochen{C.E}")
+        input("\nEnter drücken...")
+        return
+    
     print(f"\n{C.Y}⬇️ Starte Download...{C.E}")
     
-    # Call media-downloader
-    cmd = [sys.executable, str(BASE_DIR / "scripts" / "media-downloader.py"), url]
+    # Build command
+    cmd = [sys.executable, str(BASE_DIR / "scripts" / "media-downloader.py")]
+    cmd.extend(['--dest', dest])
+    if subfolder:
+        cmd.extend(['--subfolder', subfolder])
+    cmd.append(url)
     
-    # TODO: Limit-Support in media-downloader.py einbauen
-    # Für jetzt: Warnung
+    # Note about limit (gallery-dl doesn't support --range directly via wrapper)
     if limit:
-        print(f"{C.Y}⚠️ Limit {limit} wird an media-downloader übergeben{C.E}")
-        print(f"{C.Y}   (Evtl. noch nicht unterstützt - checke Downloads!){C.E}\n")
+        print(f"{C.Y}⚠️ Limit-Support via gallery-dl --range folgt noch{C.E}")
+        print(f"{C.Y}   Für jetzt: Downloads laufen unbegrenzt{C.E}\n")
     
     try:
         subprocess.run(cmd)
@@ -535,7 +590,7 @@ def quick_presets():
                 preview_combo(selected_tags)
                 quick_presets()  # Loop back
             elif action == 'd':
-                start_download(selected_tags)
+                start_download(selected_tags, preset_name=name)
                 quick_presets()
             elif action == 's':
                 save_as_preset(selected_tags)
