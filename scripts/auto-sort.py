@@ -6,6 +6,7 @@ Auto-Sortierer für Media Files
 """
 
 import os
+import re
 import shutil
 from pathlib import Path
 import mimetypes
@@ -43,6 +44,24 @@ def get_category(file_path):
     
     return None  # Unbekannt
 
+def is_duplicate_copy(file_path):
+    """
+    Prüft ob eine Datei ein Browser-Duplikat ist (z.B. "bild (1).jpg")
+    Returns: (is_duplicate, original_name)
+    """
+    stem = file_path.stem
+    ext = file_path.suffix
+    
+    # Pattern: "filename (1)", "filename (2)", etc.
+    match = re.match(r'^(.+?)\s*\((\d+)\)$', stem)
+    
+    if match:
+        original_stem = match.group(1).strip()
+        original_name = original_stem + ext
+        return (True, original_name)
+    
+    return (False, None)
+
 def sort_files():
     """Sortiert alle Files aus incoming/ (inkl. Unterordner)"""
     if not INCOMING.exists():
@@ -61,6 +80,7 @@ def sort_files():
     
     sorted_count = 0
     skipped_count = 0
+    duplicate_removed_count = 0
     
     for file_path in files:
         category = get_category(file_path)
@@ -69,9 +89,24 @@ def sort_files():
             target_dir = SORTED / category
             target_dir.mkdir(parents=True, exist_ok=True)
             
+            # Prüfe ob Datei ein Duplikat ist (z.B. "bild (1).jpg")
+            is_dup, original_name = is_duplicate_copy(file_path)
+            
+            if is_dup:
+                # Prüfe ob Original im Zielordner existiert
+                original_path = target_dir / original_name
+                
+                if original_path.exists():
+                    # Original existiert → Duplikat löschen
+                    file_path.unlink()
+                    print(f"🗑️ Duplikat entfernt: {file_path.name} (Original: {original_name})")
+                    duplicate_removed_count += 1
+                    continue  # Nächste Datei
+                # Falls Original nicht existiert, wird das "Duplikat" normal verschoben
+            
             target_path = target_dir / file_path.name
             
-            # Handle Duplikate
+            # Handle Duplikate (falls Datei mit gleichem Namen schon existiert)
             if target_path.exists():
                 base = target_path.stem
                 ext = target_path.suffix
@@ -98,7 +133,7 @@ def sort_files():
             except:
                 pass  # Ignore errors
     
-    print(f"\n📊 Fertig: {sorted_count} sortiert, {skipped_count} übersprungen")
+    print(f"\n📊 Fertig: {sorted_count} sortiert, {duplicate_removed_count} Duplikate entfernt, {skipped_count} übersprungen")
 
 if __name__ == "__main__":
     sort_files()
