@@ -2,10 +2,16 @@
 
 Automatische Überwachung der Zwischenablage für Links.
 
+**Plattformübergreifend:** Windows, Linux, macOS
+
 ## Installation
 
-Benötigt `xclip`:
+**Empfohlen (alle Plattformen):**
+```bash
+pip install pyperclip
+```
 
+**Alternativ (nur Linux):**
 ```bash
 sudo apt install xclip
 ```

@@ -3,13 +3,24 @@
 """
 Link Monitor - Clipboard Überwachung
 Erkennt automatisch kopierte URLs und fügt sie in links.txt ein
+Plattformübergreifend: Windows, Linux, macOS
 """
 
 import re
 import time
-import subprocess
+import sys
 from pathlib import Path
 from datetime import datetime
+
+# Versuche pyperclip zu importieren
+try:
+    import pyperclip
+    HAS_PYPERCLIP = True
+except ImportError:
+    HAS_PYPERCLIP = False
+    # Fallback für Linux: subprocess mit xclip
+    if sys.platform.startswith('linux'):
+        import subprocess
 
 BASE_DIR = Path(__file__).parent.parent
 LINKS_FILE = BASE_DIR / "links.txt"
@@ -32,27 +43,35 @@ class ClipboardMonitor:
         return set()
     
     def get_clipboard(self):
-        """Holt aktuellen Clipboard-Inhalt (X11 PRIMARY + CLIPBOARD)"""
+        """Holt aktuellen Clipboard-Inhalt (plattformübergreifend)"""
         try:
-            # Versuche CLIPBOARD (Strg+C)
-            result = subprocess.run(
-                ['xclip', '-selection', 'clipboard', '-o'],
-                capture_output=True,
-                text=True,
-                timeout=1
-            )
-            if result.returncode == 0 and result.stdout.strip():
-                return result.stdout.strip()
+            if HAS_PYPERCLIP:
+                # Nutze pyperclip (Windows, macOS, Linux)
+                content = pyperclip.paste()
+                return content.strip() if content else ""
             
-            # Fallback: PRIMARY (Maus-Markierung)
-            result = subprocess.run(
-                ['xclip', '-selection', 'primary', '-o'],
-                capture_output=True,
-                text=True,
-                timeout=1
-            )
-            if result.returncode == 0:
-                return result.stdout.strip()
+            elif sys.platform.startswith('linux'):
+                # Fallback für Linux: xclip
+                # Versuche CLIPBOARD (Strg+C)
+                result = subprocess.run(
+                    ['xclip', '-selection', 'clipboard', '-o'],
+                    capture_output=True,
+                    text=True,
+                    timeout=1
+                )
+                if result.returncode == 0 and result.stdout.strip():
+                    return result.stdout.strip()
+                
+                # Fallback: PRIMARY (Maus-Markierung)
+                result = subprocess.run(
+                    ['xclip', '-selection', 'primary', '-o'],
+                    capture_output=True,
+                    text=True,
+                    timeout=1
+                )
+                if result.returncode == 0:
+                    return result.stdout.strip()
+            
         except Exception as e:
             print(f"❌ Clipboard-Fehler: {e}")
         
@@ -103,12 +122,20 @@ class ClipboardMonitor:
             print(f"📊 Insgesamt {len(self.saved_links)} Links gespeichert")
 
 if __name__ == "__main__":
-    # Prüfe ob xclip installiert ist
-    try:
-        subprocess.run(['which', 'xclip'], capture_output=True, check=True)
-    except:
-        print("❌ xclip ist nicht installiert!")
-        print("   Installiere mit: sudo apt install xclip")
+    # Prüfe ob Clipboard-Zugriff möglich ist
+    if not HAS_PYPERCLIP and sys.platform.startswith('linux'):
+        try:
+            subprocess.run(['which', 'xclip'], capture_output=True, check=True)
+        except:
+            print("❌ Kein Clipboard-Zugriff möglich!")
+            print("\nInstalliere eine der folgenden Optionen:")
+            print("  Option 1 (empfohlen): pip install pyperclip")
+            print("  Option 2 (nur Linux):  sudo apt install xclip")
+            exit(1)
+    
+    elif not HAS_PYPERCLIP:
+        print("❌ pyperclip ist nicht installiert!")
+        print("   Installiere mit: pip install pyperclip")
         exit(1)
     
     monitor = ClipboardMonitor()

@@ -1,0 +1,10 @@
+# Media Manager Dependencies
+
+# Clipboard-Zugriff (Link Monitor)
+# Plattformübergreifend: Windows, Linux, macOS
+pyperclip>=1.8.0
+
+# Optional: Falls du gallery-dl, yt-dlp direkt nutzen willst
+# (normalerweise via system install)
+# gallery-dl>=1.26.0
+# yt-dlp>=2023.0.0
