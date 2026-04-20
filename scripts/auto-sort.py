@@ -121,7 +121,15 @@ def sort_files():
         category = get_category(file_path)
         
         if category:
-            target_dir = SORTED / category
+            # Videos: In Datum-Unterordner (z.B. sorted/videos/2026-04-20/)
+            # Bilder/GIFs: Direkt (zu fragmentiert sonst)
+            if category == "videos":
+                from datetime import datetime
+                date_folder = datetime.now().strftime("%Y-%m-%d")
+                target_dir = SORTED / category / date_folder
+            else:
+                target_dir = SORTED / category
+            
             target_dir.mkdir(parents=True, exist_ok=True)
             
             # Prüfe ob Datei ein Duplikat ist (z.B. "bild (1).jpg")
@@ -151,7 +159,14 @@ def sort_files():
                     counter += 1
             
             shutil.move(str(file_path), str(target_path))
-            print(f"✅ {file_path.name} → {category}/")
+            
+            # Anzeige: Mit Datum-Ordner wenn vorhanden
+            if category == "videos":
+                date_folder = target_dir.name  # z.B. "2026-04-20"
+                print(f"✅ {file_path.name} → {category}/{date_folder}/")
+            else:
+                print(f"✅ {file_path.name} → {category}/")
+            
             sorted_count += 1
         else:
             print(f"⚠️ Übersprungen (unbekannter Typ): {file_path.name}")

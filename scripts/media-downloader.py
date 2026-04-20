@@ -248,6 +248,12 @@ def download_with_ytdlp(url, dest='incoming', subfolder=None):
     else:
         target_dir = INCOMING
     
+    # Datum-Subfolder für Videos (nur in sorted, nicht incoming!)
+    if target_dir != INCOMING:
+        from datetime import datetime
+        date_folder = datetime.now().strftime("%Y-%m-%d")
+        target_dir = target_dir / date_folder
+    
     # Subfolder hinzufügen wenn angegeben
     if subfolder:
         target_dir = target_dir / subfolder

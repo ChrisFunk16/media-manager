@@ -148,7 +148,10 @@ media-manager/
 ├── sorted/
 │   ├── images/       # Auto-sorted images (jpg, png, webp, etc.)
 │   ├── gifs/         # Auto-sorted GIFs
-│   ├── videos/       # Auto-sorted videos (mp4, m4v, webm, etc.)
+│   ├── videos/       # Auto-sorted videos (organized by date!)
+│   │   ├── 2026-04-20/   # Videos downloaded on this date
+│   │   ├── 2026-04-21/
+│   │   └── ...
 │   └── hypno/        # Manual category
 ├── scripts/          # Backend tools
 ├── media-manager.py  # Main CLI

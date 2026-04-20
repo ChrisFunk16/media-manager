@@ -40,7 +40,10 @@ D:/Media/                    (Schnelle Festplatte - nur Medien!)
   └─ sorted/
       ├─ images/
       ├─ gifs/
-      ├─ videos/
+      ├─ videos/              (Videos in Datum-Unterordner!)
+      │   ├─ 2026-04-20/
+      │   ├─ 2026-04-21/
+      │   └─ ...
       └─ hypno/
 
 [Original-Ordner]/           (Scripts + Config + Link-Files!)
