@@ -13,11 +13,46 @@ Benötigt: gallery-dl (pip install gallery-dl)
 import argparse
 import subprocess
 import sys
+import json
 from pathlib import Path
 
 BASE_DIR = Path(__file__).parent.parent
-INCOMING = BASE_DIR / "incoming"
-SORTED = BASE_DIR / "sorted"
+CONFIG_FILE = BASE_DIR / "config.json"
+
+def load_config():
+    """Lädt Config für Pfade"""
+    default_config = {
+        "media_base_dir": None,
+        "incoming": "incoming",
+        "sorted": "sorted"
+    }
+    
+    if CONFIG_FILE.exists():
+        try:
+            with open(CONFIG_FILE, 'r') as f:
+                config = json.load(f)
+            
+            for key, value in default_config.items():
+                if key not in config:
+                    config[key] = value
+            
+            return config
+        except:
+            pass
+    
+    return default_config
+
+# Config laden
+config = load_config()
+
+# Base dir für Medien
+if config['media_base_dir']:
+    MEDIA_BASE = Path(config['media_base_dir']).expanduser()
+else:
+    MEDIA_BASE = BASE_DIR
+
+INCOMING = MEDIA_BASE / config['incoming']
+SORTED = MEDIA_BASE / config['sorted']
 
 def check_gallery_dl():
     """Prüft ob gallery-dl installiert ist"""

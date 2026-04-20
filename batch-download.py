@@ -6,10 +6,44 @@ Batch Downloader - Download multiple URLs from a file
 
 import sys
 import subprocess
+import json
 from pathlib import Path
 
 BASE_DIR = Path(__file__).parent
 SCRIPTS = BASE_DIR / "scripts"
+CONFIG_FILE = BASE_DIR / "config.json"
+
+def load_config():
+    """Lädt Config für Pfade"""
+    default_config = {
+        "media_base_dir": None,
+        "incoming": "incoming",
+        "sorted": "sorted"
+    }
+    
+    if CONFIG_FILE.exists():
+        try:
+            with open(CONFIG_FILE, 'r') as f:
+                config = json.load(f)
+            
+            for key, value in default_config.items():
+                if key not in config:
+                    config[key] = value
+            
+            return config
+        except:
+            pass
+    
+    return default_config
+
+# Config laden
+config = load_config()
+
+# Base dir für Medien
+if config['media_base_dir']:
+    MEDIA_BASE = Path(config['media_base_dir']).expanduser()
+else:
+    MEDIA_BASE = BASE_DIR
 
 def download(url):
     """Download single URL"""
@@ -18,8 +52,8 @@ def download(url):
 
 def main():
     # Check beide Dateien (links.txt bevorzugt, da aktueller vom Link Monitor)
-    urls_file = BASE_DIR / "urls.txt"
-    links_file = BASE_DIR / "links.txt"
+    urls_file = MEDIA_BASE / "urls.txt"
+    links_file = MEDIA_BASE / "links.txt"
     
     source_file = None
     if links_file.exists():

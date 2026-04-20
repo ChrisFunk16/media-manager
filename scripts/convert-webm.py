@@ -8,11 +8,47 @@ Konvertiert .webm und .m4v Videos zu .mp4 (benötigt ffmpeg)
 import os
 import sys
 import subprocess
+import json
 from pathlib import Path
 
 BASE_DIR = Path(__file__).parent.parent
-SORTED_VIDEOS = BASE_DIR / "sorted" / "videos"
-SORTED_GIFS = BASE_DIR / "sorted" / "gifs"
+CONFIG_FILE = BASE_DIR / "config.json"
+
+def load_config():
+    """Lädt Config für Pfade"""
+    default_config = {
+        "media_base_dir": None,
+        "incoming": "incoming",
+        "sorted": "sorted"
+    }
+    
+    if CONFIG_FILE.exists():
+        try:
+            with open(CONFIG_FILE, 'r') as f:
+                config = json.load(f)
+            
+            for key, value in default_config.items():
+                if key not in config:
+                    config[key] = value
+            
+            return config
+        except:
+            pass
+    
+    return default_config
+
+# Config laden
+config = load_config()
+
+# Base dir für Medien
+if config['media_base_dir']:
+    MEDIA_BASE = Path(config['media_base_dir']).expanduser()
+else:
+    MEDIA_BASE = BASE_DIR
+
+SORTED_VIDEOS = MEDIA_BASE / config['sorted'] / "videos"
+SORTED_GIFS = MEDIA_BASE / config['sorted'] / "gifs"
+SORTED_HYPNO = MEDIA_BASE / config['sorted'] / "hypno"
 
 def check_ffmpeg():
     """Prüft ob ffmpeg installiert ist"""
@@ -74,6 +110,11 @@ def find_files_to_convert():
     if SORTED_GIFS.exists():
         files_to_convert.extend(SORTED_GIFS.glob('*.webm'))
         files_to_convert.extend(SORTED_GIFS.glob('*.m4v'))
+    
+    # Check hypno folder
+    if SORTED_HYPNO.exists():
+        files_to_convert.extend(SORTED_HYPNO.glob('*.webm'))
+        files_to_convert.extend(SORTED_HYPNO.glob('*.m4v'))
     
     return files_to_convert
 
