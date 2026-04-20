@@ -8,10 +8,67 @@ import sys
 import subprocess
 import json
 from pathlib import Path
+from urllib.parse import urlparse
 
 BASE_DIR = Path(__file__).parent
 SCRIPTS = BASE_DIR / "scripts"
 CONFIG_FILE = BASE_DIR / "config.json"
+
+# Helper-Funktionen für Setup-Checks
+def is_hypnotube_url(url):
+    """Prüft ob URL von HypnoTube ist"""
+    parsed = urlparse(url)
+    return 'hypnotube.com' in parsed.netloc.lower()
+
+def check_ytdlp():
+    """Prüft ob yt-dlp installiert ist"""
+    try:
+        subprocess.run(['yt-dlp', '--version'], 
+                      capture_output=True, check=True)
+        return True
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return False
+
+def check_hypnotube_plugin():
+    """Prüft ob HypnoTube Plugin installiert ist"""
+    try:
+        result = subprocess.run(
+            [sys.executable, '-c', 
+             'import yt_dlp_plugins.extractor.hypnotube; print("OK")'],
+            capture_output=True,
+            text=True,
+            timeout=2
+        )
+        return result.returncode == 0 and 'OK' in result.stdout
+    except:
+        return False
+
+def install_ytdlp():
+    """Installiert yt-dlp via pip"""
+    print("📦 Installiere yt-dlp...")
+    try:
+        subprocess.run([sys.executable, '-m', 'pip', 'install', '-U', 'yt-dlp'],
+                      check=True)
+        print("✅ yt-dlp Installation erfolgreich")
+        return True
+    except subprocess.CalledProcessError:
+        print("❌ yt-dlp Installation fehlgeschlagen")
+        return False
+
+def install_hypnotube_plugin():
+    """Installiert HypnoTube Plugin für yt-dlp"""
+    print("📦 Installiere HypnoTube Plugin + bs4...")
+    try:
+        subprocess.run([
+            sys.executable, '-m', 'pip', 'install', '-U',
+            'https://github.com/Earthworm-Banana/yt-dlp-HypnoTube_com-plugin/archive/refs/heads/master.zip',
+            'bs4'
+        ], check=True)
+        print("✅ HypnoTube Plugin Installation erfolgreich")
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"❌ Plugin Installation fehlgeschlagen: {e}")
+        return False
 
 def load_config():
     """Lädt Config für Pfade"""
@@ -85,6 +142,39 @@ def main():
     
     print(f"📥 Gefunden: {len(urls)} URLs\n")
     
+    # PRE-CHECK: Dependencies EINMAL prüfen/installieren (nicht bei jeder URL!)
+    has_hypnotube_urls = any(is_hypnotube_url(url) for url in urls)
+    
+    if has_hypnotube_urls:
+        print("🔍 HypnoTube Links gefunden - prüfe Dependencies...\n")
+        
+        # Check yt-dlp
+        if not check_ytdlp():
+            print("⚠️ yt-dlp nicht gefunden (benötigt für HypnoTube)")
+            install = input("Installieren? (y/n): ")
+            if install.lower() == 'y':
+                if not install_ytdlp():
+                    print("❌ Abgebrochen - yt-dlp Installation fehlgeschlagen")
+                    sys.exit(1)
+            else:
+                print("❌ Abgebrochen - yt-dlp benötigt")
+                sys.exit(1)
+        
+        # Check HypnoTube Plugin
+        if not check_hypnotube_plugin():
+            print("⚠️ HypnoTube Plugin nicht gefunden")
+            install = input("Plugin + bs4 installieren? (y/n): ")
+            if install.lower() == 'y':
+                if not install_hypnotube_plugin():
+                    print("❌ Abgebrochen - Plugin Installation fehlgeschlagen")
+                    sys.exit(1)
+            else:
+                print("❌ Abgebrochen - HypnoTube Plugin benötigt")
+                sys.exit(1)
+        
+        print("✅ Alle Dependencies vorhanden!\n")
+    
+    # Download-Loop (jetzt ohne wiederholte Checks!)
     for i, url in enumerate(urls, 1):
         print(f"\n{'='*60}")
         print(f"[{i}/{len(urls)}] {url}")
