@@ -92,10 +92,17 @@ def main():
     
     print(f"\n✅ Fertig! {len(urls)} URLs heruntergeladen")
     
-    # Lösche verarbeitete URLs aus der Datei
-    print(f"\n🗑️ Räume {source_file.name} auf...")
-    source_file.unlink()  # Datei löschen
-    print(f"✅ {source_file.name} geleert")
+    # Archiviere verarbeitete URLs (History behalten!)
+    archive_dir = MEDIA_BASE / "processed"
+    archive_dir.mkdir(exist_ok=True)
+    
+    from datetime import datetime
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    archive_file = archive_dir / f"{source_file.stem}-{timestamp}.txt"
+    
+    print(f"\n📦 Archiviere {source_file.name} → {archive_file.name}")
+    source_file.rename(archive_file)
+    print(f"✅ Archiviert nach: {archive_file}")
     
     print("\nJetzt Auto-Sort laufen lassen:")
     print("  python scripts/auto-sort.py")

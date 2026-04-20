@@ -4,6 +4,8 @@ sorted/
 
 # User files
 urls.txt
+links.txt
+processed/
 
 # Python cache
 __pycache__/
