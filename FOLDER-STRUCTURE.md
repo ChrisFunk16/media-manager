@@ -10,10 +10,18 @@ media-collection/
 │   ├── favorites/        # 🆕 Handverlesen, spezielle Tags
 │   ├── images/           # Generische Bilder (Archiv)
 │   ├── gifs/             # GIFs
-│   ├── videos/           # Videos (automatisch in Datum-Ordner sortiert!)
-│   │   ├── 2026-04-20/   # Videos vom 20. April
-│   │   ├── 2026-04-21/   # Videos vom 21. April
-│   │   └── ...
+│   ├── videos/           # Videos (Datum + Kategorien)
+│   │   ├── 2026-04-20/   # Auto-Sort: Nach Datum
+│   │   ├── 2026-04-21/
+│   │   ├── anal/         # Manuelle Kategorien
+│   │   ├── blowjob/
+│   │   ├── cum/
+│   │   ├── dick/
+│   │   ├── dildo/
+│   │   ├── joi/
+│   │   ├── sissy/
+│   │   ├── ...           # (siehe VIDEO-CATEGORIES.md)
+│   │   └── uncategorized/
 │   └── hypno/            # Hypno-Content
 ├── duplicates/           # 🆕 Gefundene Duplikate
 └── scripts/
