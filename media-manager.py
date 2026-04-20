@@ -20,8 +20,7 @@ def load_config():
     default_config = {
         "media_base_dir": None,
         "incoming": "incoming",
-        "sorted": "sorted",
-        "scripts": "scripts"
+        "sorted": "sorted"
     }
     
     if CONFIG_FILE.exists():
@@ -51,7 +50,7 @@ else:
 
 INCOMING = MEDIA_BASE / config['incoming']
 SORTED = MEDIA_BASE / config['sorted']
-SCRIPTS = MEDIA_BASE / config['scripts']
+SCRIPTS = BASE_DIR / "scripts"  # Scripts bleiben IMMER im Original-Ordner
 PRESETS_FILE = MEDIA_BASE / "tag-presets.json"
 
 # Farben für Terminal

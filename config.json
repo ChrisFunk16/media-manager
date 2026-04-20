@@ -1,6 +1,5 @@
 {
   "media_base_dir": null,
   "incoming": "incoming",
-  "sorted": "sorted",
-  "scripts": "scripts"
+  "sorted": "sorted"
 }
