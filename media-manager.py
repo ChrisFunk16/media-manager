@@ -11,11 +11,48 @@ import subprocess
 import json
 from pathlib import Path
 
+# Config laden
 BASE_DIR = Path(__file__).parent
-INCOMING = BASE_DIR / "incoming"
-SORTED = BASE_DIR / "sorted"
-SCRIPTS = BASE_DIR / "scripts"
-PRESETS_FILE = BASE_DIR / "tag-presets.json"
+CONFIG_FILE = BASE_DIR / "config.json"
+
+def load_config():
+    """Lädt Config und setzt Pfade"""
+    default_config = {
+        "media_base_dir": None,
+        "incoming": "incoming",
+        "sorted": "sorted",
+        "scripts": "scripts"
+    }
+    
+    if CONFIG_FILE.exists():
+        try:
+            with open(CONFIG_FILE, 'r') as f:
+                config = json.load(f)
+            
+            # Merge mit defaults
+            for key, value in default_config.items():
+                if key not in config:
+                    config[key] = value
+            
+            return config
+        except:
+            pass
+    
+    return default_config
+
+# Config laden und Pfade setzen
+config = load_config()
+
+# Base dir: custom oder script dir
+if config['media_base_dir']:
+    MEDIA_BASE = Path(config['media_base_dir']).expanduser()
+else:
+    MEDIA_BASE = BASE_DIR
+
+INCOMING = MEDIA_BASE / config['incoming']
+SORTED = MEDIA_BASE / config['sorted']
+SCRIPTS = MEDIA_BASE / config['scripts']
+PRESETS_FILE = MEDIA_BASE / "tag-presets.json"
 
 # Farben für Terminal
 class Colors:
