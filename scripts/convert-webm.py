@@ -66,6 +66,12 @@ def convert_webm_to_mp4(webm_file, delete_original=True):
     # Skip if MP4 already exists
     if mp4_file.exists():
         print(f"⚠️ Übersprungen (MP4 existiert): {webm_file.name}")
+        
+        # Lösche Original trotzdem wenn gewünscht (ist redundant!)
+        if delete_original:
+            webm_file.unlink()
+            print(f"🗑️ Original gelöscht: {webm_file.name}")
+        
         return False
     
     print(f"🔄 Konvertiere: {webm_file.name}")
