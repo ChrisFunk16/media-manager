@@ -286,37 +286,22 @@ def download(url, dest='incoming', subfolder=None):
     if is_hypnotube_url(url):
         # HypnoTube → yt-dlp
         if not check_ytdlp():
-            print("⚠️ yt-dlp nicht gefunden (benötigt für HypnoTube)")
-            install = input("Installieren? (y/n): ")
-            if install.lower() == 'y':
-                if not install_ytdlp():
-                    return False
-            else:
-                print("Abgebrochen")
-                return False
+            print("❌ yt-dlp nicht gefunden!")
+            print("   Installiere mit: pip install -r requirements.txt")
+            return False
         
         if not check_hypnotube_plugin():
-            print("⚠️ HypnoTube Plugin nicht gefunden")
-            install = input("Plugin + bs4 installieren? (y/n): ")
-            if install.lower() == 'y':
-                if not install_hypnotube_plugin():
-                    return False
-            else:
-                print("Abgebrochen")
-                return False
+            print("❌ HypnoTube Plugin nicht gefunden!")
+            print("   Installiere mit: pip install -r requirements.txt")
+            return False
         
         return download_with_ytdlp(url, dest, subfolder)
     else:
         # Andere Sites → gallery-dl
         if not check_gallery_dl():
-            print("⚠️ gallery-dl nicht gefunden")
-            install = input("Installieren? (y/n): ")
-            if install.lower() == 'y':
-                if not install_gallery_dl():
-                    return False
-            else:
-                print("Abgebrochen")
-                return False
+            print("❌ gallery-dl nicht gefunden!")
+            print("   Installiere mit: pip install -r requirements.txt")
+            return False
         
         return download_with_gallery_dl(url, dest, subfolder)
 

@@ -147,35 +147,24 @@ def main():
     
     print(f"📥 Gefunden: {len(urls)} URLs\n")
     
-    # PRE-CHECK: Dependencies EINMAL prüfen/installieren (nicht bei jeder URL!)
+    # PRE-CHECK: Dependencies prüfen
     has_hypnotube_urls = any(is_hypnotube_url(url) for url in urls)
     
     if has_hypnotube_urls:
         print("🔍 HypnoTube Links gefunden - prüfe Dependencies...\n")
         
-        # Check yt-dlp
+        missing = []
         if not check_ytdlp():
-            print("⚠️ yt-dlp nicht gefunden (benötigt für HypnoTube)")
-            install = input("Installieren? (y/n): ")
-            if install.lower() == 'y':
-                if not install_ytdlp():
-                    print("❌ Abgebrochen - yt-dlp Installation fehlgeschlagen")
-                    sys.exit(1)
-            else:
-                print("❌ Abgebrochen - yt-dlp benötigt")
-                sys.exit(1)
-        
-        # Check HypnoTube Plugin
+            missing.append("yt-dlp")
         if not check_hypnotube_plugin():
-            print("⚠️ HypnoTube Plugin nicht gefunden")
-            install = input("Plugin + bs4 installieren? (y/n): ")
-            if install.lower() == 'y':
-                if not install_hypnotube_plugin():
-                    print("❌ Abgebrochen - Plugin Installation fehlgeschlagen")
-                    sys.exit(1)
-            else:
-                print("❌ Abgebrochen - HypnoTube Plugin benötigt")
-                sys.exit(1)
+            missing.append("HypnoTube Plugin")
+        
+        if missing:
+            print(f"❌ Fehlende Dependencies: {', '.join(missing)}")
+            print("\n🔧 Installation:")
+            print("   pip install -r requirements.txt")
+            print("\n   (installiert: gallery-dl, yt-dlp, HypnoTube Plugin, bs4)")
+            sys.exit(1)
         
         print("✅ Alle Dependencies vorhanden!\n")
     

@@ -1,14 +1,10 @@
 # Media Manager Dependencies
 
-# Clipboard-Zugriff (Link Monitor)
-# Plattformübergreifend: Windows, Linux, macOS
-pyperclip>=1.8.0
+# Core Tools
+pyperclip>=1.8.0                     # Clipboard-Zugriff (Link Monitor)
+gallery-dl>=1.26.0                   # Multi-Site Downloader
+yt-dlp>=2024.0.0                     # Video Downloader (HypnoTube)
 
-# Optional: Falls du gallery-dl, yt-dlp direkt nutzen willst
-# (normalerweise via system install)
-# gallery-dl>=1.26.0
-# yt-dlp>=2023.0.0
-
-# HypnoTube Support (wird bei Bedarf auto-installiert)
-# bs4>=0.0.1  # Benötigt für HypnoTube Plugin
-# hypnotube-plugin: https://github.com/Earthworm-Banana/yt-dlp-HypnoTube_com-plugin
+# HypnoTube Plugin (from GitHub)
+https://github.com/Earthworm-Banana/yt-dlp-HypnoTube_com-plugin/archive/refs/heads/master.zip
+bs4>=0.0.2                           # BeautifulSoup4 (required by HypnoTube plugin)

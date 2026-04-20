@@ -40,6 +40,9 @@ Interactive CLI tool for downloading and organizing media from multiple sources.
 git clone https://github.com/ChrisFunk16/media-manager.git
 cd media-manager
 
+# Install dependencies
+pip install -r requirements.txt
+
 # Create data folders
 mkdir -p incoming sorted/{images,gifs,videos,hypno}
 
@@ -53,6 +56,9 @@ mkdir -p incoming sorted/{images,gifs,videos,hypno}
 git clone https://github.com/ChrisFunk16/media-manager.git
 cd media-manager
 
+# Install dependencies
+pip install -r requirements.txt
+
 # Create data folders
 mkdir incoming
 mkdir sorted\images sorted\gifs sorted\videos sorted\hypno
@@ -61,7 +67,11 @@ mkdir sorted\images sorted\gifs sorted\videos sorted\hypno
 mm.bat
 ```
 
-That's it! The tool will auto-install `gallery-dl` when you first download something.
+That's it! `pip install -r requirements.txt` installs everything you need:
+- `gallery-dl` (Reddit, Rule34, Twitter, 100+ sites)
+- `yt-dlp` (HypnoTube videos)
+- `HypnoTube Plugin` (auto-installed from GitHub)
+- `pyperclip` (Link Monitor)
 
 ## 📖 Usage
 
@@ -148,11 +158,19 @@ media-manager/
 
 ## 🔧 Requirements
 
-- Python 3.6+
-- `gallery-dl` (auto-installed on first use)
-- `ffmpeg` (optional, for WebM → MP4 conversion)
+**Python Dependencies** (install once):
+```bash
+pip install -r requirements.txt
+```
 
-**Install ffmpeg:**
+This installs:
+- `gallery-dl` - Multi-site downloader (Reddit, Rule34, Twitter, etc.)
+- `yt-dlp` - Video downloader (HypnoTube support)
+- `HypnoTube Plugin` - yt-dlp plugin for HypnoTube.com
+- `pyperclip` - Clipboard monitoring (Link Monitor)
+- `bs4` (BeautifulSoup4) - Required by HypnoTube plugin
+
+**Optional: ffmpeg** (for WebM → MP4 conversion):
 ```bash
 # Windows
 winget install ffmpeg
