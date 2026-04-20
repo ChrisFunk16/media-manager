@@ -57,69 +57,101 @@ else:
 INCOMING = MEDIA_BASE / config['incoming']
 SORTED = MEDIA_BASE / config['sorted']
 
+# Cache für Installation-Checks (verhindert wiederholte Checks)
+_ytdlp_available = None
+_hypnotube_plugin_available = None
+_gallery_dl_available = None
+
 def is_hypnotube_url(url):
     """Prüft ob URL von HypnoTube ist"""
     parsed = urlparse(url)
     return 'hypnotube.com' in parsed.netloc.lower()
 
 def check_gallery_dl():
-    """Prüft ob gallery-dl installiert ist"""
+    """Prüft ob gallery-dl installiert ist (mit Cache)"""
+    global _gallery_dl_available
+    if _gallery_dl_available is not None:
+        return _gallery_dl_available
+    
     try:
         subprocess.run(['gallery-dl', '--version'], 
                       capture_output=True, check=True)
+        _gallery_dl_available = True
         return True
     except (subprocess.CalledProcessError, FileNotFoundError):
+        _gallery_dl_available = False
         return False
 
 def check_ytdlp():
-    """Prüft ob yt-dlp installiert ist"""
+    """Prüft ob yt-dlp installiert ist (mit Cache)"""
+    global _ytdlp_available
+    if _ytdlp_available is not None:
+        return _ytdlp_available
+    
     try:
         subprocess.run(['yt-dlp', '--version'], 
                       capture_output=True, check=True)
+        _ytdlp_available = True
         return True
     except (subprocess.CalledProcessError, FileNotFoundError):
+        _ytdlp_available = False
         return False
 
 def check_hypnotube_plugin():
-    """Prüft ob HypnoTube Plugin installiert ist"""
+    """Prüft ob HypnoTube Plugin installiert ist (mit Cache)"""
+    global _hypnotube_plugin_available
+    if _hypnotube_plugin_available is not None:
+        return _hypnotube_plugin_available
+    
     try:
-        # Test mit yt-dlp ob Plugin funktioniert
+        # Versuche das Plugin zu importieren (zuverlässiger als --list-extractors)
+        # Das Plugin heißt yt_dlp_plugins.extractor.hypnotube
         result = subprocess.run(
-            ['yt-dlp', '--list-extractors'],
+            [sys.executable, '-c', 
+             'import yt_dlp_plugins.extractor.hypnotube; print("OK")'],
             capture_output=True,
             text=True,
-            check=True
+            timeout=2
         )
-        return 'hypnotube' in result.stdout.lower()
+        _hypnotube_plugin_available = (result.returncode == 0 and 'OK' in result.stdout)
+        return _hypnotube_plugin_available
     except:
+        _hypnotube_plugin_available = False
         return False
 
 def install_gallery_dl():
     """Installiert gallery-dl via pip"""
+    global _gallery_dl_available
     print("📦 Installiere gallery-dl...")
     try:
         subprocess.run([sys.executable, '-m', 'pip', 'install', 'gallery-dl'],
                       check=True)
         print("✅ Installation erfolgreich")
+        _gallery_dl_available = True  # Cache updaten
         return True
     except subprocess.CalledProcessError:
         print("❌ Installation fehlgeschlagen")
+        _gallery_dl_available = False
         return False
 
 def install_ytdlp():
     """Installiert yt-dlp via pip"""
+    global _ytdlp_available
     print("📦 Installiere yt-dlp...")
     try:
         subprocess.run([sys.executable, '-m', 'pip', 'install', '-U', 'yt-dlp'],
                       check=True)
         print("✅ yt-dlp Installation erfolgreich")
+        _ytdlp_available = True  # Cache updaten
         return True
     except subprocess.CalledProcessError:
         print("❌ yt-dlp Installation fehlgeschlagen")
+        _ytdlp_available = False
         return False
 
 def install_hypnotube_plugin():
     """Installiert HypnoTube Plugin für yt-dlp"""
+    global _hypnotube_plugin_available
     print("📦 Installiere HypnoTube Plugin + bs4...")
     try:
         # Install plugin + dependency
@@ -129,9 +161,11 @@ def install_hypnotube_plugin():
             'bs4'
         ], check=True)
         print("✅ HypnoTube Plugin Installation erfolgreich")
+        _hypnotube_plugin_available = True  # Cache updaten
         return True
     except subprocess.CalledProcessError as e:
         print(f"❌ Plugin Installation fehlgeschlagen: {e}")
+        _hypnotube_plugin_available = False
         return False
 
 def download_with_gallery_dl(url, dest='incoming', subfolder=None):
