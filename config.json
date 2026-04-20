@@ -1,5 +1,5 @@
 {
-  "media_base_dir": null,
+  "media_base_dir": "F:/MediaManager/Media" ,
   "incoming": "incoming",
   "sorted": "sorted"
 }
