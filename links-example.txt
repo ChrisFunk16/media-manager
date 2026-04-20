@@ -1,0 +1,13 @@
+# links.txt - Link Monitor Ausgabe
+# Diese Datei wird automatisch vom Link Monitor (Option l) erstellt
+# Oder füge manuell URLs hier ein (eine pro Zeile)
+# 
+# Nutzung:
+# 1. Link Monitor starten → sammelt kopierte Links
+# 2. batch-download.py → lädt alle Links
+# 3. Links werden nach processed/ archiviert
+#
+# Beispiel-Links:
+# https://reddit.com/r/wallpapers
+# https://hypnotube.com/video/shock-409.html
+# https://redgifs.com/watch/somegif

@@ -51,9 +51,10 @@ def download(url):
     subprocess.run(cmd)
 
 def main():
-    # Check beide Dateien (links.txt bevorzugt, da aktueller vom Link Monitor)
-    urls_file = MEDIA_BASE / "urls.txt"
-    links_file = MEDIA_BASE / "links.txt"
+    # WICHTIG: links/urls bleiben im Script-Ordner (BASE_DIR), nicht MEDIA_BASE!
+    # Genau wie SCRIPTS auch im Original bleiben
+    urls_file = BASE_DIR / "urls.txt"
+    links_file = BASE_DIR / "links.txt"
     
     source_file = None
     if links_file.exists():
@@ -63,7 +64,7 @@ def main():
     
     if not source_file:
         print("❌ Keine URL-Datei gefunden!")
-        print(f"\nErstelle eine der Dateien:")
+        print(f"\nErstelle eine der Dateien im Script-Ordner:")
         print(f"  • {links_file} (via Link Monitor)")
         print(f"  • {urls_file} (manuell)")
         print("\nBeispiel urls.txt:")
@@ -93,7 +94,8 @@ def main():
     print(f"\n✅ Fertig! {len(urls)} URLs heruntergeladen")
     
     # Archiviere verarbeitete URLs (History behalten!)
-    archive_dir = MEDIA_BASE / "processed"
+    # Archiv bleibt im Script-Ordner (BASE_DIR)
+    archive_dir = BASE_DIR / "processed"
     archive_dir.mkdir(exist_ok=True)
     
     from datetime import datetime
@@ -102,7 +104,7 @@ def main():
     
     print(f"\n📦 Archiviere {source_file.name} → {archive_file.name}")
     source_file.rename(archive_file)
-    print(f"✅ Archiviert nach: {archive_file}")
+    print(f"✅ Archiviert nach: processed/{archive_file.name}")
     
     print("\nJetzt Auto-Sort laufen lassen:")
     print("  python scripts/auto-sort.py")

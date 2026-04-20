@@ -14,7 +14,10 @@ Die `config.json` erlaubt dir, die Medien-Pfade anzupassen. Standard-Verhalten: 
 }
 ```
 
-**Hinweis:** Scripts bleiben IMMER im Original-Ordner, nur die Medien werden verschoben.
+**Wichtig:** 
+- Scripts bleiben IMMER im Original-Ordner (wo `media-manager.py` liegt)
+- Link-Files (`links.txt`, `urls.txt`, `processed/`) bleiben auch im Script-Ordner
+- Nur Medien (`incoming/`, `sorted/`) werden nach `media_base_dir` verschoben
 
 ### Beispiel: Schnellere Festplatte
 
@@ -32,21 +35,22 @@ Das verschiebt alle Medien nach `D:/Media/`, während die Scripts im Original-Or
 
 Mit `media_base_dir` gesetzt:
 ```
-D:/Media/                    (Schnelle Festplatte)
+D:/Media/                    (Schnelle Festplatte - nur Medien!)
   ├─ incoming/
-  ├─ sorted/
-  │   ├─ images/
-  │   ├─ gifs/
-  │   ├─ videos/
-  │   └─ hypno/
-  ├─ tag-presets.json
-  └─ links.txt
+  └─ sorted/
+      ├─ images/
+      ├─ gifs/
+      ├─ videos/
+      └─ hypno/
 
-[Original-Ordner]/           (Scripts bleiben hier!)
+[Original-Ordner]/           (Scripts + Config + Link-Files!)
   ├─ scripts/
   ├─ media-manager.py
   ├─ config.json
-  └─ mm.bat
+  ├─ mm.bat
+  ├─ tag-presets.json
+  ├─ links.txt                 (Link Monitor speichert hier)
+  └─ processed/                (Archiv für verarbeitete Links)
 ```
 
 ### Hinweise

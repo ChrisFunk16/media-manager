@@ -52,13 +52,9 @@ def load_config():
 # Config laden
 config = load_config()
 
-# Base dir für Medien (links.txt landet bei den Medien)
-if config['media_base_dir']:
-    MEDIA_BASE = Path(config['media_base_dir']).expanduser()
-else:
-    MEDIA_BASE = BASE_DIR
-
-LINKS_FILE = MEDIA_BASE / "links.txt"
+# WICHTIG: links.txt bleibt im Script-Ordner (BASE_DIR), nicht MEDIA_BASE!
+# Nur Medien (incoming, sorted) gehen nach MEDIA_BASE
+LINKS_FILE = BASE_DIR / "links.txt"
 
 # URL Pattern
 URL_PATTERN = re.compile(
