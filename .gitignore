@@ -6,6 +6,7 @@ sorted/
 urls.txt
 links.txt
 processed/
+.hypnotube_plugin_installed
 
 # Python cache
 __pycache__/

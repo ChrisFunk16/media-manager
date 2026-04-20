@@ -65,6 +65,11 @@ def install_hypnotube_plugin():
             'bs4'
         ], check=True)
         print("✅ HypnoTube Plugin Installation erfolgreich")
+        
+        # Flag-File erstellen damit media-downloader.py nicht mehr fragt
+        flag_file = BASE_DIR / ".hypnotube_plugin_installed"
+        flag_file.touch()
+        
         return True
     except subprocess.CalledProcessError as e:
         print(f"❌ Plugin Installation fehlgeschlagen: {e}")

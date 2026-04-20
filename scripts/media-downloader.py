@@ -98,14 +98,19 @@ def check_ytdlp():
         return False
 
 def check_hypnotube_plugin():
-    """Prüft ob HypnoTube Plugin installiert ist (mit Cache)"""
+    """Prüft ob HypnoTube Plugin installiert ist (mit Cache + Flag-File)"""
     global _hypnotube_plugin_available
     if _hypnotube_plugin_available is not None:
         return _hypnotube_plugin_available
     
+    # Check 1: Flag-File (gesetzt von batch-download.py nach Installation)
+    flag_file = BASE_DIR / ".hypnotube_plugin_installed"
+    if flag_file.exists():
+        _hypnotube_plugin_available = True
+        return True
+    
+    # Check 2: Import-Test (falls manuell installiert)
     try:
-        # Versuche das Plugin zu importieren (zuverlässiger als --list-extractors)
-        # Das Plugin heißt yt_dlp_plugins.extractor.hypnotube
         result = subprocess.run(
             [sys.executable, '-c', 
              'import yt_dlp_plugins.extractor.hypnotube; print("OK")'],
@@ -113,11 +118,16 @@ def check_hypnotube_plugin():
             text=True,
             timeout=2
         )
-        _hypnotube_plugin_available = (result.returncode == 0 and 'OK' in result.stdout)
-        return _hypnotube_plugin_available
+        if result.returncode == 0 and 'OK' in result.stdout:
+            _hypnotube_plugin_available = True
+            # Flag-File erstellen für zukünftige Checks
+            flag_file.touch()
+            return True
     except:
-        _hypnotube_plugin_available = False
-        return False
+        pass
+    
+    _hypnotube_plugin_available = False
+    return False
 
 def install_gallery_dl():
     """Installiert gallery-dl via pip"""
@@ -161,6 +171,11 @@ def install_hypnotube_plugin():
             'bs4'
         ], check=True)
         print("✅ HypnoTube Plugin Installation erfolgreich")
+        
+        # Flag-File erstellen (persistent über Prozesse hinweg!)
+        flag_file = BASE_DIR / ".hypnotube_plugin_installed"
+        flag_file.touch()
+        
         _hypnotube_plugin_available = True  # Cache updaten
         return True
     except subprocess.CalledProcessError as e:
