@@ -8,3 +8,7 @@ pyperclip>=1.8.0
 # (normalerweise via system install)
 # gallery-dl>=1.26.0
 # yt-dlp>=2023.0.0
+
+# HypnoTube Support (wird bei Bedarf auto-installiert)
+# bs4>=0.0.1  # Benötigt für HypnoTube Plugin
+# hypnotube-plugin: https://github.com/Earthworm-Banana/yt-dlp-HypnoTube_com-plugin

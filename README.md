@@ -9,6 +9,7 @@ Interactive CLI tool for downloading and organizing media from multiple sources.
   - Rule34.xxx (posts, tag searches)
   - Redgifs (GIFs, users, searches)
   - Twitter/X (tweets, timelines, media, likes)
+  - HypnoTube (videos, users, channels, playlists)
   - 100+ other sites via gallery-dl
   
 - 🏷️ **Tag Preset System**
@@ -175,7 +176,15 @@ Via [gallery-dl](https://github.com/mikf/gallery-dl):
 - DeviantArt, Pixiv
 - 100+ more
 
-Full list: https://github.com/mikf/gallery-dl/blob/master/docs/supportedsites.md
+Via [yt-dlp](https://github.com/yt-dlp/yt-dlp) + plugins:
+- **HypnoTube** (videos, users, channels, playlists)
+  - Auto-installs plugin on first use
+  - Example: `https://hypnotube.com/video/shock-409.html`
+  - User uploads: `https://hypnotube.com/user/username-123/`
+  - Channels: `https://hypnotube.com/channels/38/hd/`
+  - Playlists: `https://hypnotube.com/playlist/93707/name/`
+
+Full gallery-dl list: https://github.com/mikf/gallery-dl/blob/master/docs/supportedsites.md
 
 ## 📚 Documentation
 
