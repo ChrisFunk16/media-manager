@@ -104,23 +104,23 @@ def convert_webm_to_mp4(webm_file, delete_original=True):
         return False
 
 def find_files_to_convert():
-    """Findet alle .webm und .m4v Dateien"""
+    """Findet alle .webm und .m4v Dateien (rekursiv in Unterordnern)"""
     files_to_convert = []
     
-    # Check videos folder
+    # Check videos folder (rekursiv!)
     if SORTED_VIDEOS.exists():
-        files_to_convert.extend(SORTED_VIDEOS.glob('*.webm'))
-        files_to_convert.extend(SORTED_VIDEOS.glob('*.m4v'))
+        files_to_convert.extend(SORTED_VIDEOS.rglob('*.webm'))
+        files_to_convert.extend(SORTED_VIDEOS.rglob('*.m4v'))
     
     # Check gifs folder (manche WebMs sind animiert)
     if SORTED_GIFS.exists():
-        files_to_convert.extend(SORTED_GIFS.glob('*.webm'))
-        files_to_convert.extend(SORTED_GIFS.glob('*.m4v'))
+        files_to_convert.extend(SORTED_GIFS.rglob('*.webm'))
+        files_to_convert.extend(SORTED_GIFS.rglob('*.m4v'))
     
     # Check hypno folder
     if SORTED_HYPNO.exists():
-        files_to_convert.extend(SORTED_HYPNO.glob('*.webm'))
-        files_to_convert.extend(SORTED_HYPNO.glob('*.m4v'))
+        files_to_convert.extend(SORTED_HYPNO.rglob('*.webm'))
+        files_to_convert.extend(SORTED_HYPNO.rglob('*.m4v'))
     
     return files_to_convert
 
