@@ -181,12 +181,15 @@ def main():
         delete_original = (choice == '2')
 
     # Convert all
+    total = len(files)
     success_count = 0
-    for file in files:
+    for i, file in enumerate(files, 1):
+        print(f"PROGRESS:{i}/{total}")
         if convert_webm_to_mp4(file, delete_original=delete_original):
             success_count += 1
 
-    print(f"\n📊 Fertig: {success_count}/{len(files)} konvertiert")
+    print(f"PROGRESS:{total}/{total}")
+    print(f"Fertig: {success_count}/{total} konvertiert")
 
 if __name__ == "__main__":
     main()

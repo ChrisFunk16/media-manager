@@ -605,6 +605,10 @@ select{background:#0d0d1a;border:1px solid #2a2a45;border-radius:7px;padding:7px
 .log-header span{color:#666;font-size:.78rem;text-transform:uppercase;letter-spacing:.5px}
 .log-terminal{background:#080810;border:1px solid #1e1e36;border-radius:8px;padding:14px;font-family:'Consolas','Courier New',monospace;font-size:.78rem;color:#a0c060;max-height:340px;overflow-y:auto;white-space:pre-wrap;word-break:break-all}
 .log-terminal div{line-height:1.5}
+.progress-wrap{margin-bottom:8px;display:none}
+.progress-track{background:#0d0d1a;border:1px solid #1e1e36;border-radius:20px;height:10px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,#4a7aff,#8aacff);border-radius:20px;width:0%;transition:width .3s ease}
+.progress-label{font-size:.72rem;color:#666;margin-top:4px;text-align:right}
 .job-list{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
 .job-row{background:#0d0d1a;border:1px solid #1e1e36;border-radius:8px;padding:14px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .job-info{flex:1;min-width:180px}
@@ -957,6 +961,7 @@ select{background:#0d0d1a;border:1px solid #2a2a45;border-radius:7px;padding:7px
     </div>
     <button class="btn btn-sm" id="conv-btn" data-label="&#128260; Konvertieren" onclick="startConvert()">&#128260; Konvertieren</button>
     <div class="log-wrap" id="conv-log-wrap" style="display:none;margin-top:10px">
+      <div class="progress-wrap" id="conv-progress-wrap"><div class="progress-track"><div class="progress-fill" id="conv-progress-fill"></div></div><div class="progress-label" id="conv-progress-label"></div></div>
       <div class="log-terminal" id="conv-log" style="max-height:200px"></div>
     </div>
   </div>
@@ -965,9 +970,9 @@ select{background:#0d0d1a;border:1px solid #2a2a45;border-radius:7px;padding:7px
     <div class="form-row" style="margin-bottom:10px">
       <label style="color:#666;font-size:.82rem">Ordner:</label>
       <select id="dedup-dir" style="padding:6px 10px;font-size:.82rem">
-        <option value="sorted">Alle sorted/</option>
-        <option value="sorted/images">sorted/images</option>
-        <option value="sorted/videos">sorted/videos</option>
+        <option value="">Alle sorted/</option>
+        <option value="images">sorted/images</option>
+        <option value="videos">sorted/videos</option>
       </select>
       <label style="color:#666;font-size:.82rem;margin-left:8px">Threshold:</label>
       <select id="dedup-thresh" style="padding:6px 10px;font-size:.82rem">
@@ -976,8 +981,15 @@ select{background:#0d0d1a;border:1px solid #2a2a45;border-radius:7px;padding:7px
         <option value="10">10 - &#196;hnlich</option>
       </select>
     </div>
+    <div class="form-row" style="margin-bottom:10px;align-items:center;gap:8px">
+      <label style="color:#666;font-size:.82rem;display:flex;align-items:center;gap:6px;cursor:pointer">
+        <input type="checkbox" id="dedup-frame-hash">
+        &#127916; Frame-Hash f&#252;r &#228;hnliche Videos (langsamer, braucht FFmpeg)
+      </label>
+    </div>
     <button class="btn btn-sm" id="dedup-btn" data-label="&#128473; Deduplizieren" onclick="startDedup()">&#128473; Deduplizieren</button>
     <div class="log-wrap" id="dedup-log-wrap" style="display:none;margin-top:10px">
+      <div class="progress-wrap" id="dedup-progress-wrap"><div class="progress-track"><div class="progress-fill" id="dedup-progress-fill"></div></div><div class="progress-label" id="dedup-progress-label"></div></div>
       <div class="log-terminal" id="dedup-log" style="max-height:200px"></div>
     </div>
   </div>
@@ -1648,15 +1660,34 @@ function openSSELog(url, logId, wrapId, btnId, onDone) {
   if (wrap) wrap.style.display = '';
   clearLogEl(logId);
 
+  // Progress bar elements (named by convention: <logId> → logId base prefix)
+  var progWrap  = document.getElementById(logId.replace('-log', '-progress-wrap'));
+  var progFill  = document.getElementById(logId.replace('-log', '-progress-fill'));
+  var progLabel = document.getElementById(logId.replace('-log', '-progress-label'));
+  if (progWrap)  { progWrap.style.display = 'block'; }
+  if (progFill)  { progFill.style.width = '0%'; }
+  if (progLabel) { progLabel.textContent = ''; }
+
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Läuft…'; }
 
   var src = new EventSource(url);
   src.onmessage = function(e) {
     if (e.data === '__DONE__') {
       src.close();
+      if (progFill)  { progFill.style.width = '100%'; }
+      if (progLabel) { progLabel.textContent = '✓ Fertig'; }
       if (btn) { btn.disabled = false; btn.textContent = btn.dataset.label || 'Starten'; }
       if (typeof onDone === 'function') onDone();
       return;
+    }
+    // Handle progress protocol: PROGRESS:X/Y
+    var m = e.data.match(/^PROGRESS:(\d+)\/(\d+)$/);
+    if (m) {
+      var cur = parseInt(m[1], 10), tot = parseInt(m[2], 10);
+      var pct = tot > 0 ? Math.round(cur / tot * 100) : 0;
+      if (progFill)  { progFill.style.width = pct + '%'; }
+      if (progLabel) { progLabel.textContent = cur + ' / ' + tot + ' (' + pct + '%)'; }
+      return; // don't print to terminal
     }
     if (log) {
       var line = document.createElement('div');
@@ -1783,9 +1814,11 @@ function startConvert() {
 function startDedup() {
   var dir    = document.getElementById('dedup-dir');
   var thresh = document.getElementById('dedup-thresh');
+  var fh     = document.getElementById('dedup-frame-hash');
   var params = new URLSearchParams({
-    dir:       dir    ? dir.value    : 'sorted',
-    threshold: thresh ? thresh.value : '5'
+    dir:        dir    ? dir.value    : '',
+    threshold:  thresh ? thresh.value : '5',
+    frame_hash: fh && fh.checked ? '1' : '0'
   });
   openSSELog('/stream/dedup?' + params.toString(),
              'dedup-log', 'dedup-log-wrap', 'dedup-btn', function() {
@@ -2461,11 +2494,14 @@ def stream_convert():
 
 @app.route('/stream/dedup')
 def stream_dedup():
-    dir_arg   = request.args.get('dir', 'sorted')
-    threshold = request.args.get('threshold', '5')
-    target    = str(SORTED / dir_arg) if not dir_arg.startswith('/') else dir_arg
+    dir_arg    = request.args.get('dir', '')
+    threshold  = request.args.get('threshold', '5')
+    frame_hash = request.args.get('frame_hash', '0') == '1'
+    target = str(SORTED / dir_arg) if dir_arg else str(SORTED)
     cmd = [sys.executable, str(SCRIPTS_DIR / 'deduplicate.py'),
            '--auto', '--dir', target, '--threshold', threshold]
+    if frame_hash:
+        cmd.append('--frame-hash')
     return Response(stream_with_context(_stream_subprocess(cmd)),
                     mimetype='text/event-stream')
 

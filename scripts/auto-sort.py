@@ -130,16 +130,21 @@ def resolve_target_dir(file_path: Path) -> tuple:
     """
     Returns (target_dir: Path, display: str) for a file from incoming/.
 
+    All auto-sorted files land in  sorted/<cat>/new/YYYY-MM-DD/  so the user
+    can review and re-sort them from the "New" view before they mix with the
+    existing library.
+
     Routing priority (when file is in incoming/<subfolder>/):
-      1. Exact top-level category match  →  sorted/<subfolder>/
-      2. Existing video subcategory      →  sorted/videos/<subfolder>/   (videos only)
-      3. Keyword in subfolder name       →  sorted/<matched_category>/
-      4. Default                         →  sorted/<type>/[date/]
-    Files directly in incoming/ root always use default routing.
+      1. Exact top-level category match  →  sorted/<subfolder>/new/<date>/
+      2. Existing video subcategory      →  sorted/videos/<subfolder>/new/<date>/
+      3. Keyword in subfolder name       →  sorted/<matched_cat>/new/<date>/
+      4. Default                         →  sorted/<type>/new/<date>/
     """
     file_cat = get_category(file_path)
     if not file_cat:
         return None, None
+
+    date_dir = _date_subfolder(file_path)
 
     # Detect subfolder inside incoming/
     try:
@@ -148,41 +153,42 @@ def resolve_target_dir(file_path: Path) -> tuple:
         rel_parts = ()
 
     subfolder = rel_parts[0] if len(rel_parts) > 1 else None
-
     sub_lower = subfolder.lower() if subfolder else ''
 
-    # ── Audio: eigene Routing-Logik ──────────────────────────────────────────
+    def _new(base: Path, label: str):
+        """Wrap target in new/<date>/ subfolder."""
+        return base / 'new' / date_dir, f"{label}new/{date_dir}/"
+
+    # ── Bilder und GIFs: immer eigene Kategorie ──────────────────────────────
+    if file_cat in ('images', 'gifs'):
+        return _new(SORTED / file_cat, f"{file_cat}/")
+
+    # ── Audio ─────────────────────────────────────────────────────────────────
     if file_cat == 'audio':
-        # Subfolder enthält Audio-Subkat-Keyword (z.B. "soundhypno" → audio/hypno/)
         if sub_lower:
             for kw, subcat in AUDIO_SUBCAT_KEYWORDS.items():
                 if kw in sub_lower:
-                    target = SORTED / 'audio' / subcat
-                    return target, f"audio/{subcat}/ [Keyword '{kw}']"
-        # Fallback: alle Audio nach sorted/audio/
-        return SORTED / 'audio', 'audio/'
+                    return _new(SORTED / 'audio' / subcat, f"audio/{subcat}/")
+        return _new(SORTED / 'audio', 'audio/')
 
-    # ── Alle anderen Typen ───────────────────────────────────────────────────
+    # ── Videos: Subfolder-Routing ─────────────────────────────────────────────
     if subfolder:
-        # 1. Exact top-level category match (e.g. incoming/hypno/ → sorted/hypno/)
+        # 1. Exact top-level category match (z.B. incoming/hypno/ → sorted/hypno/)
         if sub_lower in TOP_CATEGORIES:
-            return SORTED / sub_lower, f"{sub_lower}/ [Subfolder-Match]"
+            return _new(SORTED / sub_lower, f"{sub_lower}/")
 
-        # 2. Known video subcategory exists (e.g. incoming/sissy/ → sorted/videos/sissy/)
+        # 2. Bekannte Video-Subkategorie (z.B. incoming/sissy/ → sorted/videos/sissy/)
         video_sub = SORTED / 'videos' / subfolder
-        if video_sub.exists() and file_cat == 'videos':
-            return video_sub, f"videos/{subfolder}/ [Video-Subkat]"
+        if video_sub.exists():
+            return _new(video_sub, f"videos/{subfolder}/")
 
-        # 3. Keyword match (e.g. incoming/sissyhypno/ contains "hypno" → sorted/hypno/)
+        # 3. Keyword-Match (z.B. incoming/sissyhypno/ → sorted/hypno/)
         for keyword, mapped_cat in CATEGORY_KEYWORDS.items():
             if keyword in sub_lower:
-                return SORTED / mapped_cat, f"{mapped_cat}/ [Keyword '{keyword}']"
+                return _new(SORTED / mapped_cat, f"{mapped_cat}/")
 
-    # 4. Default routing by file type
-    if file_cat == 'videos':
-        date_dir = _date_subfolder(file_path)
-        return SORTED / 'videos' / date_dir, f"videos/{date_dir}/"
-    return SORTED / file_cat, f"{file_cat}/"
+    # 4. Default
+    return _new(SORTED / 'videos', 'videos/')
 
 
 def sort_files():
