@@ -9,6 +9,7 @@ import os
 import re
 import shutil
 import json
+from datetime import datetime
 from pathlib import Path
 import mimetypes
 
@@ -28,15 +29,15 @@ def load_config():
         try:
             with open(CONFIG_FILE, 'r') as f:
                 config = json.load(f)
-            
+
             for key, value in default_config.items():
                 if key not in config:
                     config[key] = value
-            
+
             return config
-        except:
-            pass
-    
+        except (json.JSONDecodeError, OSError) as e:
+            print(f"⚠️ Config konnte nicht geladen werden ({e}), nutze Defaults")
+
     return default_config
 
 # Config laden
@@ -123,9 +124,14 @@ def sort_files():
         if category:
             # Videos: In Datum-Unterordner (z.B. sorted/videos/2026-04-20/)
             # Bilder/GIFs: Direkt (zu fragmentiert sonst)
+            # Datum kommt aus mtime, damit Backlogs ihren Erstell-Zeitpunkt
+            # behalten statt alle in den heutigen Ordner zu fallen.
             if category == "videos":
-                from datetime import datetime
-                date_folder = datetime.now().strftime("%Y-%m-%d")
+                try:
+                    mtime = file_path.stat().st_mtime
+                    date_folder = datetime.fromtimestamp(mtime).strftime("%Y-%m-%d")
+                except OSError:
+                    date_folder = datetime.now().strftime("%Y-%m-%d")
                 target_dir = SORTED / category / date_folder
             else:
                 target_dir = SORTED / category
@@ -173,15 +179,15 @@ def sort_files():
             skipped_count += 1
     
     # Cleanup: Lösche leere Unterordner in incoming/
-    for root, dirs, files in os.walk(INCOMING, topdown=False):
+    for root, dirs, _files in os.walk(INCOMING, topdown=False):
         for dir_name in dirs:
             dir_path = Path(root) / dir_name
             try:
                 if not any(dir_path.iterdir()):  # Leer?
                     dir_path.rmdir()
                     print(f"🗑️ Leerer Ordner entfernt: {dir_path.relative_to(INCOMING)}")
-            except:
-                pass  # Ignore errors
+            except OSError:
+                pass  # Ordner nicht leer oder Permission-Error → ignorieren
     
     print(f"\n📊 Fertig: {sorted_count} sortiert, {duplicate_removed_count} Duplikate entfernt, {skipped_count} übersprungen")
 

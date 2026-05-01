@@ -9,6 +9,7 @@ import os
 import sys
 import subprocess
 import json
+import datetime
 from pathlib import Path
 
 # Config laden
@@ -52,6 +53,7 @@ INCOMING = MEDIA_BASE / config['incoming']
 SORTED = MEDIA_BASE / config['sorted']
 SCRIPTS = BASE_DIR / "scripts"  # Scripts bleiben IMMER im Original-Ordner
 PRESETS_FILE = MEDIA_BASE / "tag-presets.json"
+JOBS_FILE = BASE_DIR / "jobs.json"
 
 # Farben für Terminal
 class Colors:
@@ -119,6 +121,9 @@ def print_menu():
     print(f"  {Colors.GREEN}7{Colors.END} - WebM → MP4 konvertieren")
     print(f"  {Colors.GREEN}8{Colors.END} - Browse Sorted Files")
     print(f"  {Colors.GREEN}9{Colors.END} - Stats anzeigen")
+    print(f"  {Colors.GREEN}s{Colors.END} - Archiv durchsuchen")
+    print(f"  {Colors.GREEN}w{Colors.END} - Web Interface öffnen")
+    print(f"  {Colors.GREEN}j{Colors.END} - Scheduler / Auto-Jobs")
     print(f"  {Colors.YELLOW}l{Colors.END} - Link Monitor starten")
     print(f"  {Colors.YELLOW}0{Colors.END} - Tag-Presets verwalten")
     print(f"  {Colors.RED}q{Colors.END} - Quit")
@@ -637,6 +642,262 @@ def manage_tag_presets():
         elif choice == 'b':
             break
 
+def _format_size(size_bytes):
+    for unit in ['B', 'KB', 'MB', 'GB']:
+        if size_bytes < 1024:
+            return f"{size_bytes:.1f} {unit}"
+        size_bytes /= 1024
+    return f"{size_bytes:.1f} TB"
+
+
+def search_archive():
+    clear()
+    print_header()
+    print(f"{Colors.BOLD}Archiv-Suche{Colors.END}\n")
+
+    if not SORTED.exists():
+        print(f"{Colors.RED}❌ sorted/ Ordner nicht gefunden{Colors.END}")
+        input(f"\n{Colors.BLUE}Enter drücken...{Colors.END}")
+        return
+
+    query = input(f"{Colors.GREEN}Suchbegriff (leer = alle):{Colors.END} ").strip().lower()
+
+    print(f"\nKategorie:")
+    print(f"  {Colors.GREEN}1{Colors.END} - Alle")
+    print(f"  {Colors.GREEN}2{Colors.END} - Images")
+    print(f"  {Colors.GREEN}3{Colors.END} - GIFs")
+    print(f"  {Colors.GREEN}4{Colors.END} - Videos")
+    print(f"  {Colors.GREEN}5{Colors.END} - Hypno")
+    cat_choice = input(f"\n{Colors.GREEN}Kategorie:{Colors.END} ").strip()
+    cat_map = {'2': 'images', '3': 'gifs', '4': 'videos', '5': 'hypno'}
+    category_filter = cat_map.get(cat_choice)
+
+    print(f"\nSortierung:")
+    print(f"  {Colors.GREEN}1{Colors.END} - Datum (neueste zuerst)")
+    print(f"  {Colors.GREEN}2{Colors.END} - Größe (größte zuerst)")
+    print(f"  {Colors.GREEN}3{Colors.END} - Name (A-Z)")
+    sort_choice = input(f"\n{Colors.GREEN}Sortierung:{Colors.END} ").strip()
+
+    print(f"\n{Colors.YELLOW}Suche...{Colors.END}")
+
+    if category_filter:
+        search_dirs = [SORTED / category_filter]
+    else:
+        search_dirs = [SORTED / cat for cat in ['images', 'gifs', 'videos', 'hypno']]
+
+    results = []
+    for search_dir in search_dirs:
+        if not search_dir.exists():
+            continue
+        for f in search_dir.rglob('*'):
+            if not f.is_file():
+                continue
+            if query and query not in f.name.lower():
+                continue
+            try:
+                stat = f.stat()
+                results.append({
+                    'path': f,
+                    'name': f.name,
+                    'category': search_dir.name,
+                    'size': stat.st_size,
+                    'mtime': stat.st_mtime,
+                })
+            except OSError:
+                pass
+
+    if sort_choice == '2':
+        results.sort(key=lambda x: x['size'], reverse=True)
+    elif sort_choice == '3':
+        results.sort(key=lambda x: x['name'].lower())
+    else:
+        results.sort(key=lambda x: x['mtime'], reverse=True)
+
+    clear()
+    print_header()
+    print(f"{Colors.BOLD}Suchergebnisse{Colors.END}")
+    if query:
+        print(f"Suchbegriff: {Colors.YELLOW}{query}{Colors.END}")
+    if category_filter:
+        print(f"Kategorie:   {Colors.YELLOW}{category_filter}{Colors.END}")
+    print(f"Gefunden:    {Colors.GREEN}{len(results)}{Colors.END} Dateien\n")
+
+    if not results:
+        input(f"\n{Colors.BLUE}Enter drücken...{Colors.END}")
+        return
+
+    show_count = min(20, len(results))
+    for i, r in enumerate(results[:show_count], 1):
+        size_str = _format_size(r['size'])
+        date_str = datetime.datetime.fromtimestamp(r['mtime']).strftime('%Y-%m-%d')
+        print(f"  {Colors.GREEN}{i:2d}{Colors.END}. [{r['category']:7s}] {Colors.BOLD}{r['name'][:50]}{Colors.END}")
+        print(f"       {size_str:10s}  {date_str}  {r['path'].parent}")
+
+    if len(results) > show_count:
+        print(f"\n  ... und {len(results) - show_count} weitere")
+
+    print(f"\nNummer eingeben → Ordner öffnen  |  {Colors.RED}b{Colors.END} → Zurück")
+
+    while True:
+        choice = input(f"\n{Colors.GREEN}Auswahl:{Colors.END} ").strip().lower()
+        if choice == 'b':
+            break
+        try:
+            idx = int(choice) - 1
+            if 0 <= idx < len(results[:show_count]):
+                folder = results[idx]['path'].parent
+                if sys.platform == 'win32':
+                    subprocess.run(['explorer', str(folder)])
+                elif sys.platform == 'darwin':
+                    subprocess.run(['open', str(folder)])
+                else:
+                    subprocess.run(['xdg-open', str(folder)])
+            else:
+                print(f"{Colors.RED}Ungültige Nummer{Colors.END}")
+        except ValueError:
+            print(f"{Colors.RED}Ungültige Eingabe{Colors.END}")
+
+
+def start_webui():
+    clear()
+    print_header()
+    print(f"{Colors.BOLD}Web Interface{Colors.END}\n")
+    print(f"Startet einen lokalen Webserver auf http://localhost:5000")
+    print(f"Der Browser öffnet sich automatisch.\n")
+    print(f"{Colors.YELLOW}ℹ️ Läuft im Vordergrund - Strg+C zum Beenden{Colors.END}")
+    print(f"{Colors.YELLOW}ℹ️ Flask wird benötigt: pip install flask{Colors.END}\n")
+
+    port_input = input(f"{Colors.GREEN}Port (Enter = 5000):{Colors.END} ").strip()
+    port = port_input if port_input.isdigit() else '5000'
+
+    input(f"{Colors.GREEN}Enter drücken zum Starten...{Colors.END}")
+
+    try:
+        subprocess.run([sys.executable, str(SCRIPTS / "webui.py"), f"--port={port}"])
+    except KeyboardInterrupt:
+        pass
+
+    print()
+    input(f"{Colors.BLUE}Enter drücken um fortzufahren...{Colors.END}")
+
+
+def load_jobs():
+    if not JOBS_FILE.exists():
+        return {"jobs": []}
+    try:
+        with open(JOBS_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception:
+        return {"jobs": []}
+
+
+def save_jobs(data):
+    with open(JOBS_FILE, 'w', encoding='utf-8') as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+
+
+def manage_jobs():
+    while True:
+        clear()
+        print_header()
+        print(f"{Colors.BOLD}Scheduler - Jobs verwalten{Colors.END}\n")
+
+        data = load_jobs()
+        jobs = data.get('jobs', [])
+
+        if jobs:
+            print(f"{Colors.BOLD}Geplante Jobs:{Colors.END}")
+            for i, job in enumerate(jobs, 1):
+                dot = f"{Colors.GREEN}●{Colors.END}" if job.get('enabled', True) else f"{Colors.RED}○{Colors.END}"
+                last_run = (job.get('last_run') or '-')[:10]
+                url_short = job.get('url', '')[:50]
+                print(f"  {dot} {Colors.BOLD}{i}{Colors.END}. {Colors.GREEN}{job['name']}{Colors.END}  @ {job.get('schedule', '-')}")
+                print(f"       {url_short}")
+                print(f"       Letzter Run: {last_run}")
+            print()
+        else:
+            print(f"{Colors.YELLOW}Keine Jobs konfiguriert.{Colors.END}\n")
+
+        print(f"  {Colors.GREEN}1{Colors.END} - Job hinzufügen")
+        print(f"  {Colors.GREEN}2{Colors.END} - Job löschen")
+        print(f"  {Colors.GREEN}3{Colors.END} - Job aktivieren/deaktivieren")
+        print(f"  {Colors.GREEN}4{Colors.END} - Scheduler starten (Dauerschleife)")
+        print(f"  {Colors.GREEN}5{Colors.END} - Fällige Jobs jetzt ausführen")
+        print(f"  {Colors.RED}b{Colors.END} - Zurück")
+        print()
+
+        choice = input(f"{Colors.GREEN}Auswahl:{Colors.END} ").strip().lower()
+
+        if choice == '1':
+            print()
+            name = input(f"{Colors.GREEN}Job-Name:{Colors.END} ").strip()
+            if not name:
+                continue
+            url = input(f"{Colors.GREEN}URL (Reddit, Rule34, etc.):{Colors.END} ").strip()
+            if not url:
+                continue
+            schedule = input(f"{Colors.GREEN}Uhrzeit täglich (HH:MM, z.B. 20:00):{Colors.END} ").strip()
+            try:
+                datetime.datetime.strptime(schedule, '%H:%M')
+            except ValueError:
+                print(f"{Colors.RED}❌ Ungültige Uhrzeit. Format: HH:MM{Colors.END}")
+                input(f"\n{Colors.BLUE}Enter drücken...{Colors.END}")
+                continue
+            data['jobs'].append({"name": name, "url": url, "schedule": schedule, "enabled": True, "last_run": None})
+            save_jobs(data)
+            print(f"{Colors.GREEN}✅ Job '{name}' gespeichert (täglich {schedule}){Colors.END}")
+            input(f"\n{Colors.BLUE}Enter drücken...{Colors.END}")
+
+        elif choice == '2':
+            if not jobs:
+                continue
+            num = input(f"{Colors.GREEN}Job-Nummer löschen:{Colors.END} ").strip()
+            try:
+                idx = int(num) - 1
+                if 0 <= idx < len(jobs):
+                    removed = data['jobs'].pop(idx)
+                    save_jobs(data)
+                    print(f"{Colors.GREEN}✅ Job '{removed['name']}' gelöscht{Colors.END}")
+                else:
+                    print(f"{Colors.RED}❌ Ungültige Nummer{Colors.END}")
+            except ValueError:
+                print(f"{Colors.RED}❌ Ungültige Eingabe{Colors.END}")
+            input(f"\n{Colors.BLUE}Enter drücken...{Colors.END}")
+
+        elif choice == '3':
+            if not jobs:
+                continue
+            num = input(f"{Colors.GREEN}Job-Nummer (de)aktivieren:{Colors.END} ").strip()
+            try:
+                idx = int(num) - 1
+                if 0 <= idx < len(jobs):
+                    current = data['jobs'][idx].get('enabled', True)
+                    data['jobs'][idx]['enabled'] = not current
+                    save_jobs(data)
+                    status = "aktiviert" if not current else "deaktiviert"
+                    print(f"{Colors.GREEN}✅ Job '{jobs[idx]['name']}' {status}{Colors.END}")
+                else:
+                    print(f"{Colors.RED}❌ Ungültige Nummer{Colors.END}")
+            except ValueError:
+                print(f"{Colors.RED}❌ Ungültige Eingabe{Colors.END}")
+            input(f"\n{Colors.BLUE}Enter drücken...{Colors.END}")
+
+        elif choice == '4':
+            print(f"\n{Colors.YELLOW}Scheduler läuft - Strg+C zum Beenden{Colors.END}\n")
+            try:
+                subprocess.run([sys.executable, str(SCRIPTS / "scheduler.py")])
+            except KeyboardInterrupt:
+                pass
+            input(f"\n{Colors.BLUE}Enter drücken...{Colors.END}")
+
+        elif choice == '5':
+            subprocess.run([sys.executable, str(SCRIPTS / "scheduler.py"), "--once"])
+            input(f"\n{Colors.BLUE}Enter drücken...{Colors.END}")
+
+        elif choice == 'b':
+            break
+
+
 def main():
     while True:
         clear()
@@ -667,6 +928,12 @@ def main():
             browse_sorted()
         elif choice == '9':
             show_stats()
+        elif choice == 's':
+            search_archive()
+        elif choice == 'w':
+            start_webui()
+        elif choice == 'j':
+            manage_jobs()
         elif choice == 'l':
             start_link_monitor()
         elif choice == '0':

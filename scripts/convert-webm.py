@@ -26,15 +26,15 @@ def load_config():
         try:
             with open(CONFIG_FILE, 'r') as f:
                 config = json.load(f)
-            
+
             for key, value in default_config.items():
                 if key not in config:
                     config[key] = value
-            
+
             return config
-        except:
-            pass
-    
+        except (json.JSONDecodeError, OSError) as e:
+            print(f"⚠️ Config konnte nicht geladen werden ({e}), nutze Defaults")
+
     return default_config
 
 # Config laden
@@ -59,19 +59,41 @@ def check_ffmpeg():
     except (subprocess.CalledProcessError, FileNotFoundError):
         return False
 
-def convert_webm_to_mp4(webm_file, delete_original=True):
+def safe_unlink(path):
+    """Löscht Datei, loggt Fehler statt zu crashen"""
+    try:
+        path.unlink()
+        print(f"🗑️ Original gelöscht: {path.name}")
+        return True
+    except OSError as e:
+        print(f"⚠️ Konnte {path.name} nicht löschen: {e}")
+        return False
+
+
+def convert_webm_to_mp4(webm_file, delete_original=False):
     """Konvertiert einzelne WebM zu MP4"""
     mp4_file = webm_file.with_suffix('.mp4')
-    
+
     # Skip if MP4 already exists
     if mp4_file.exists():
         print(f"⚠️ Übersprungen (MP4 existiert): {webm_file.name}")
-        
-        # Lösche Original trotzdem wenn gewünscht (ist redundant!)
+
+        # Lösche Original nur wenn die existierende MP4 plausibel valid ist.
+        # Heuristik gegen Datenverlust durch 0-byte oder offensichtlich
+        # korrupte MP4s: Größe > 0 und mindestens 30% der Original-Größe.
         if delete_original:
-            webm_file.unlink()
-            print(f"🗑️ Original gelöscht: {webm_file.name}")
-        
+            try:
+                mp4_size = mp4_file.stat().st_size
+                webm_size = webm_file.stat().st_size
+            except OSError as e:
+                print(f"⚠️ stat() fehlgeschlagen, behalte Original: {e}")
+                return False
+
+            if mp4_size > 0 and mp4_size > webm_size * 0.3:
+                safe_unlink(webm_file)
+            else:
+                print(f"⚠️ MP4 zu klein ({mp4_size} B vs {webm_size} B Original) — Original behalten")
+
         return False
     
     print(f"🔄 Konvertiere: {webm_file.name}")
@@ -95,9 +117,8 @@ def convert_webm_to_mp4(webm_file, delete_original=True):
         
         # Lösche Original wenn gewünscht
         if delete_original:
-            webm_file.unlink()
-            print(f"🗑️ Original gelöscht: {webm_file.name}")
-        
+            safe_unlink(webm_file)
+
         return True
     except subprocess.CalledProcessError as e:
         print(f"❌ Fehler bei {webm_file.name}: {e}")
@@ -106,22 +127,12 @@ def convert_webm_to_mp4(webm_file, delete_original=True):
 def find_files_to_convert():
     """Findet alle .webm und .m4v Dateien (rekursiv in Unterordnern)"""
     files_to_convert = []
-    
-    # Check videos folder (rekursiv!)
-    if SORTED_VIDEOS.exists():
-        files_to_convert.extend(SORTED_VIDEOS.rglob('*.webm'))
-        files_to_convert.extend(SORTED_VIDEOS.rglob('*.m4v'))
-    
-    # Check gifs folder (manche WebMs sind animiert)
-    if SORTED_GIFS.exists():
-        files_to_convert.extend(SORTED_GIFS.rglob('*.webm'))
-        files_to_convert.extend(SORTED_GIFS.rglob('*.m4v'))
-    
-    # Check hypno folder
-    if SORTED_HYPNO.exists():
-        files_to_convert.extend(SORTED_HYPNO.rglob('*.webm'))
-        files_to_convert.extend(SORTED_HYPNO.rglob('*.m4v'))
-    
+
+    for folder in (SORTED_VIDEOS, SORTED_GIFS, SORTED_HYPNO):
+        if folder.exists():
+            for ext in ('*.webm', '*.m4v'):
+                files_to_convert.extend(folder.rglob(ext))
+
     return files_to_convert
 
 def main():
@@ -161,7 +172,7 @@ def main():
     # Convert all
     success_count = 0
     for file in files:
-        if convert_webm_to_mp4(file, delete_original):
+        if convert_webm_to_mp4(file, delete_original=delete_original):
             success_count += 1
     
     print(f"\n📊 Fertig: {success_count}/{len(files)} konvertiert")
