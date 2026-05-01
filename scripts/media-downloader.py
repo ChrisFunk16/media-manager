@@ -13,6 +13,7 @@ Für HypnoTube: yt-dlp + plugin (auto-install)
 """
 
 import argparse
+import hashlib
 import subprocess
 import sys
 import json
@@ -55,7 +56,17 @@ else:
     MEDIA_BASE = BASE_DIR
 
 INCOMING = MEDIA_BASE / config['incoming']
-SORTED = MEDIA_BASE / config['sorted']
+SORTED   = MEDIA_BASE / config['sorted']
+
+# Download-Archive: tracks already-downloaded IDs per URL so re-runs only fetch new content
+ARCHIVE_DIR = BASE_DIR / '.archives'
+
+
+def get_archive_file(url: str) -> Path:
+    """Return a stable archive file path for a given URL (MD5-keyed)."""
+    key = hashlib.md5(url.encode()).hexdigest()
+    ARCHIVE_DIR.mkdir(exist_ok=True)
+    return ARCHIVE_DIR / f"{key}.txt"
 
 # Cache für Installation-Checks (verhindert wiederholte Checks)
 _ytdlp_available = None
@@ -183,16 +194,16 @@ def install_hypnotube_plugin():
         _hypnotube_plugin_available = False
         return False
 
-def download_with_gallery_dl(url, dest='incoming', subfolder=None):
+def download_with_gallery_dl(url, dest='incoming', subfolder=None, use_archive=True):
     """
     Lädt Medien von URL via gallery-dl
-    
+
     Args:
         url: Download-URL
         dest: Zielordner (incoming/bulk/favorites/images)
         subfolder: Optional subfolder name (z.B. preset name)
+        use_archive: Bereits heruntergeladene Dateien überspringen (default: True)
     """
-    # Bestimme Zielpfad
     if dest == 'bulk':
         target_dir = SORTED / "bulk"
     elif dest == 'favorites':
@@ -201,34 +212,36 @@ def download_with_gallery_dl(url, dest='incoming', subfolder=None):
         target_dir = SORTED / "images"
     else:
         target_dir = INCOMING
-    
-    # Subfolder hinzufügen wenn angegeben
+
     if subfolder:
         target_dir = target_dir / subfolder
-    
+
     target_dir.mkdir(parents=True, exist_ok=True)
-    
-    print(f"⬇️ Lade: {url}")
-    print(f"📁 Ziel: {target_dir}")
-    
-    cmd = [
-        'gallery-dl',
-        '--dest', str(target_dir),
-        '--no-mtime',  # Keine Original-Timestamps
-        url
-    ]
-    
+
+    print(f"Lade: {url}")
+    print(f"Ziel: {target_dir}")
+
+    cmd = ['gallery-dl', '--dest', str(target_dir), '--no-mtime']
+
+    if use_archive:
+        archive = get_archive_file(url)
+        cmd += ['--download-archive', str(archive)]
+        print(f"Archiv: {archive.name} ({'neu' if not archive.exists() else 'vorhanden — nur neue Inhalte'})")
+
+    cmd.append(url)
+
     try:
         result = subprocess.run(cmd, check=True, capture_output=True, text=True)
-        print("✅ Download abgeschlossen")
-        print(result.stdout)
+        print("Download abgeschlossen")
+        if result.stdout:
+            print(result.stdout)
     except subprocess.CalledProcessError as e:
-        print(f"❌ Fehler beim Download:\n{e.stderr}")
+        print(f"Fehler beim Download:\n{e.stderr}")
         return False
-    
+
     return True
 
-def download_with_ytdlp(url, dest='incoming', subfolder=None):
+def download_with_ytdlp(url, dest='incoming', subfolder=None, use_archive=True):
     """
     Lädt Videos von HypnoTube via yt-dlp
     
@@ -260,19 +273,24 @@ def download_with_ytdlp(url, dest='incoming', subfolder=None):
     
     target_dir.mkdir(parents=True, exist_ok=True)
     
-    print(f"🎬 Lade HypnoTube: {url}")
-    print(f"📁 Ziel: {target_dir}")
-    
-    # yt-dlp Output-Template: filename only
+    print(f"Lade HypnoTube: {url}")
+    print(f"Ziel: {target_dir}")
+
     output_template = str(target_dir / "%(title)s-%(id)s.%(ext)s")
-    
+
     cmd = [
         'yt-dlp',
-        '--add-headers', 'Referer: https://hypnotube.com',  # Für Thumbnails
+        '--add-headers', 'Referer: https://hypnotube.com',
         '-o', output_template,
         '--no-mtime',
-        url
     ]
+
+    if use_archive:
+        archive = get_archive_file(url)
+        cmd += ['--download-archive', str(archive)]
+        print(f"Archiv: {archive.name} ({'neu' if not archive.exists() else 'vorhanden — nur neue Inhalte'})")
+
+    cmd.append(url)
     
     try:
         result = subprocess.run(cmd, check=True, capture_output=True, text=True)
@@ -285,31 +303,21 @@ def download_with_ytdlp(url, dest='incoming', subfolder=None):
     
     return True
 
-def download(url, dest='incoming', subfolder=None):
-    """
-    Smart Downloader - wählt automatisch das richtige Tool
-    """
+def download(url, dest='incoming', subfolder=None, use_archive=True):
+    """Smart Downloader - wählt automatisch das richtige Tool."""
     if is_hypnotube_url(url):
-        # HypnoTube → yt-dlp
         if not check_ytdlp():
-            print("❌ yt-dlp nicht gefunden!")
-            print("   Installiere mit: pip install -r requirements.txt")
+            print("yt-dlp nicht gefunden! Installiere mit: pip install -r requirements.txt")
             return False
-        
         if not check_hypnotube_plugin():
-            print("❌ HypnoTube Plugin nicht gefunden!")
-            print("   Installiere mit: pip install -r requirements.txt")
+            print("HypnoTube Plugin nicht gefunden! Installiere mit: pip install -r requirements.txt")
             return False
-        
-        return download_with_ytdlp(url, dest, subfolder)
+        return download_with_ytdlp(url, dest, subfolder, use_archive=use_archive)
     else:
-        # Andere Sites → gallery-dl
         if not check_gallery_dl():
-            print("❌ gallery-dl nicht gefunden!")
-            print("   Installiere mit: pip install -r requirements.txt")
+            print("gallery-dl nicht gefunden! Installiere mit: pip install -r requirements.txt")
             return False
-        
-        return download_with_gallery_dl(url, dest, subfolder)
+        return download_with_gallery_dl(url, dest, subfolder, use_archive=use_archive)
 
 def main():
     parser = argparse.ArgumentParser(
@@ -347,10 +355,13 @@ Beispiele:
                        help='Zielordner (default: incoming)')
     parser.add_argument('--subfolder',
                        help='Subfolder name (z.B. preset name)')
-    
+    parser.add_argument('--no-archive', action='store_true',
+                       help='Archiv deaktivieren — alles erneut herunterladen')
+
     args = parser.parse_args()
-    
-    download(args.url, dest=args.dest, subfolder=args.subfolder)
+
+    download(args.url, dest=args.dest, subfolder=args.subfolder,
+             use_archive=not args.no_archive)
 
 if __name__ == "__main__":
     main()

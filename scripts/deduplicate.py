@@ -228,100 +228,134 @@ def remove_duplicates(groups, dry_run=True):
 
 
 def main():
+    import argparse
+    parser = argparse.ArgumentParser(description='Deduplicate images')
+    parser.add_argument('--auto', action='store_true',
+                        help='Non-interactive: scan and move duplicates automatically')
+    parser.add_argument('--dry-run', action='store_true',
+                        help='Non-interactive: scan only, no changes')
+    parser.add_argument('--dir', default=None,
+                        help='Directory to scan (default: sorted/images). '
+                             'Use "sorted" for all sorted subdirs.')
+    parser.add_argument('--threshold', type=int, default=5,
+                        help='Similarity threshold 0-20 (default: 5)')
+    args = parser.parse_args()
+
     print(f"{C.BOLD}{C.B}")
     print("╔═══════════════════════════════════════╗")
     print("║      🔍 DEDUPLICATE v1.0             ║")
     print("║   Perceptual Image Deduplication     ║")
     print("╚═══════════════════════════════════════╝")
     print(f"{C.E}\n")
-    
+
     # Check dependencies
     if not check_dependencies():
         sys.exit(1)
-    
-    # Welches Verzeichnis?
-    print(f"{C.BOLD}Verzeichnis zum Scannen:{C.E}\n")
-    print(f"  {C.G}1{C.E} - sorted/images")
-    print(f"  {C.G}2{C.E} - sorted/bulk")
-    print(f"  {C.G}3{C.E} - sorted/favorites")
-    print(f"  {C.G}4{C.E} - incoming")
-    print(f"  {C.G}5{C.E} - Alle sorted/ Ordner")
-    print(f"  {C.G}c{C.E} - Custom path")
-    print()
-    
-    choice = input(f"{C.G}Auswahl: {C.E}").strip()
-    
-    if choice == '1':
-        target_dir = BASE_DIR / "sorted" / "images"
-    elif choice == '2':
-        target_dir = BASE_DIR / "sorted" / "bulk"
-    elif choice == '3':
-        target_dir = BASE_DIR / "sorted" / "favorites"
-    elif choice == '4':
-        target_dir = BASE_DIR / "incoming"
-    elif choice == '5':
-        target_dir = BASE_DIR / "sorted"
-    elif choice == 'c':
-        custom = input(f"{C.G}Pfad: {C.E}").strip()
-        target_dir = Path(custom)
+
+    # Determine target directory
+    if args.auto or args.dry_run or args.dir is not None:
+        if args.dir == 'sorted' or args.dir is None:
+            target_dir = BASE_DIR / "sorted"
+        else:
+            target_dir = Path(args.dir)
+        threshold = args.threshold
     else:
-        print(f"{C.R}Ungültige Auswahl{C.E}")
-        sys.exit(1)
-    
+        # Welches Verzeichnis?
+        print(f"{C.BOLD}Verzeichnis zum Scannen:{C.E}\n")
+        print(f"  {C.G}1{C.E} - sorted/images")
+        print(f"  {C.G}2{C.E} - sorted/bulk")
+        print(f"  {C.G}3{C.E} - sorted/favorites")
+        print(f"  {C.G}4{C.E} - incoming")
+        print(f"  {C.G}5{C.E} - Alle sorted/ Ordner")
+        print(f"  {C.G}c{C.E} - Custom path")
+        print()
+
+        choice = input(f"{C.G}Auswahl: {C.E}").strip()
+
+        if choice == '1':
+            target_dir = BASE_DIR / "sorted" / "images"
+        elif choice == '2':
+            target_dir = BASE_DIR / "sorted" / "bulk"
+        elif choice == '3':
+            target_dir = BASE_DIR / "sorted" / "favorites"
+        elif choice == '4':
+            target_dir = BASE_DIR / "incoming"
+        elif choice == '5':
+            target_dir = BASE_DIR / "sorted"
+        elif choice == 'c':
+            custom = input(f"{C.G}Pfad: {C.E}").strip()
+            target_dir = Path(custom)
+        else:
+            print(f"{C.R}Ungültige Auswahl{C.E}")
+            sys.exit(1)
+
+        # Similarity threshold
+        print(f"\n{C.BOLD}Similarity Threshold:{C.E}\n")
+        print(f"  {C.G}1{C.E} - Strict (0) - nur identische")
+        print(f"  {C.G}2{C.E} - Normal (5) - sehr ähnlich (empfohlen)")
+        print(f"  {C.G}3{C.E} - Loose (10) - auch leicht unterschiedliche")
+        print(f"  {C.G}c{C.E} - Custom")
+        print()
+
+        thresh_choice = input(f"{C.G}Auswahl: {C.E}").strip()
+
+        if thresh_choice == '1':
+            threshold = 0
+        elif thresh_choice == '3':
+            threshold = 10
+        elif thresh_choice == 'c':
+            threshold = int(input(f"{C.G}Threshold (0-20): {C.E}").strip())
+        else:
+            threshold = 5
+
     if not target_dir.exists():
         print(f"{C.R}Verzeichnis nicht gefunden: {target_dir}{C.E}")
         sys.exit(1)
-    
-    # Similarity threshold
-    print(f"\n{C.BOLD}Similarity Threshold:{C.E}\n")
-    print(f"  {C.G}1{C.E} - Strict (0) - nur identische")
-    print(f"  {C.G}2{C.E} - Normal (5) - sehr ähnlich (empfohlen)")
-    print(f"  {C.G}3{C.E} - Loose (10) - auch leicht unterschiedliche")
-    print(f"  {C.G}c{C.E} - Custom")
-    print()
-    
-    thresh_choice = input(f"{C.G}Auswahl: {C.E}").strip()
-    
-    if thresh_choice == '1':
-        threshold = 0
-    elif thresh_choice == '2' or thresh_choice == '':
-        threshold = 5
-    elif thresh_choice == '3':
-        threshold = 10
-    elif thresh_choice == 'c':
-        threshold = int(input(f"{C.G}Threshold (0-20): {C.E}").strip())
-    else:
-        threshold = 5
-    
+
+    print(f"Scanne: {target_dir}  (threshold={threshold})\n")
+
     # Scan
     groups = find_duplicates(target_dir, similarity_threshold=threshold)
-    
+
     # Show results
     show_duplicates(groups)
-    
+
     if not groups:
         return
-    
+
     # Action
+    if args.dry_run:
+        remove_duplicates(groups, dry_run=True)
+        print(f"\n{C.B}Dry run - keine Änderungen vorgenommen{C.E}")
+        return
+
+    if args.auto:
+        removed, saved_mb = remove_duplicates(groups, dry_run=False)
+        print(f"\n{C.G}✅ Fertig!{C.E}")
+        print(f"  Entfernt: {removed} Bilder")
+        print(f"  Gespart: {saved_mb:.2f} MB")
+        print(f"  Duplikate in: {DUPLICATES_DIR}")
+        return
+
     print(f"\n{C.BOLD}Aktion:{C.E}\n")
     print(f"  {C.G}1{C.E} - Duplikate entfernen (nach duplicates/ verschieben)")
     print(f"  {C.G}2{C.E} - Nur anzeigen (dry run)")
     print(f"  {C.R}q{C.E} - Abbrechen")
     print()
-    
+
     action = input(f"{C.G}Auswahl: {C.E}").strip()
-    
+
     if action == '1':
         print(f"\n{C.Y}⚠️ Duplikate werden nach duplicates/ verschoben!{C.E}")
         confirm = input(f"{C.G}Fortfahren? (y/n): {C.E}").strip().lower()
-        
+
         if confirm == 'y':
             removed, saved_mb = remove_duplicates(groups, dry_run=False)
             print(f"\n{C.G}✅ Fertig!{C.E}")
             print(f"  Entfernt: {removed} Bilder")
             print(f"  Gespart: {saved_mb:.2f} MB")
             print(f"  Duplikate in: {DUPLICATES_DIR}")
-    
+
     elif action == '2':
         removed, saved_mb = remove_duplicates(groups, dry_run=True)
         print(f"\n{C.B}Dry run - keine Änderungen vorgenommen{C.E}")

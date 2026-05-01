@@ -7,6 +7,10 @@ urls.txt
 links.txt
 processed/
 .hypnotube_plugin_installed
+favorites.json
+sessions.json
+.thumbcache/
+.archives/
 
 # Python cache
 __pycache__/

@@ -54,31 +54,28 @@ SORTED = MEDIA_BASE / config['sorted']
 
 # Kategorien
 IMAGE_EXTS = {'.jpg', '.jpeg', '.png', '.webp', '.bmp', '.svg'}
-GIF_EXTS = {'.gif'}
+GIF_EXTS   = {'.gif'}
 VIDEO_EXTS = {'.mp4', '.mkv', '.avi', '.mov', '.webm', '.flv', '.wmv', '.m4v'}
+AUDIO_EXTS = {'.mp3', '.m4a', '.ogg', '.flac', '.wav', '.aac', '.opus', '.wma'}
 
 def get_category(file_path):
     """Bestimmt Kategorie basierend auf Extension"""
     ext = file_path.suffix.lower()
-    
-    if ext in GIF_EXTS:
-        return "gifs"
-    elif ext in IMAGE_EXTS:
-        return "images"
-    elif ext in VIDEO_EXTS:
-        return "videos"
-    else:
-        # Fallback: MIME-Type checken
-        mime, _ = mimetypes.guess_type(str(file_path))
-        if mime:
-            if mime == 'image/gif':
-                return "gifs"
-            elif mime.startswith('image/'):
-                return "images"
-            elif mime.startswith('video/'):
-                return "videos"
-    
-    return None  # Unbekannt
+
+    if ext in GIF_EXTS:   return "gifs"
+    if ext in IMAGE_EXTS: return "images"
+    if ext in VIDEO_EXTS: return "videos"
+    if ext in AUDIO_EXTS: return "audio"
+
+    # Fallback: MIME-Type
+    mime, _ = mimetypes.guess_type(str(file_path))
+    if mime:
+        if mime == 'image/gif':       return "gifs"
+        if mime.startswith('image/'): return "images"
+        if mime.startswith('video/'): return "videos"
+        if mime.startswith('audio/'): return "audio"
+
+    return None
 
 def is_duplicate_copy(file_path):
     """
@@ -98,98 +95,157 @@ def is_duplicate_copy(file_path):
     
     return (False, None)
 
+# Top-Level-Kategorien die direkt als Ziel gelten
+TOP_CATEGORIES = {'images', 'gifs', 'videos', 'hypno', 'audio'}
+
+# Keyword-Mapping: Wenn Subfolder-Name dieses Wort enthält → diese Kategorie
+CATEGORY_KEYWORDS = {
+    'hypno': 'hypno',
+    'image': 'images',
+    'gif':   'gifs',
+    'video': 'videos',
+    'audio': 'audio',
+    'sound': 'audio',
+    'musik': 'audio',
+    'music': 'audio',
+}
+
+# Audio-Subkategorien: Wenn Audiodatei AND Subfolder enthält dieses Keyword → audio/<subcat>/
+AUDIO_SUBCAT_KEYWORDS = {
+    'hypno': 'hypno',
+    'sissy': 'sissy',
+    'relax': 'relax',
+    'sleep': 'sleep',
+}
+
+
+def _date_subfolder(file_path: Path) -> str:
+    try:
+        return datetime.fromtimestamp(file_path.stat().st_mtime).strftime("%Y-%m-%d")
+    except OSError:
+        return datetime.now().strftime("%Y-%m-%d")
+
+
+def resolve_target_dir(file_path: Path) -> tuple:
+    """
+    Returns (target_dir: Path, display: str) for a file from incoming/.
+
+    Routing priority (when file is in incoming/<subfolder>/):
+      1. Exact top-level category match  →  sorted/<subfolder>/
+      2. Existing video subcategory      →  sorted/videos/<subfolder>/   (videos only)
+      3. Keyword in subfolder name       →  sorted/<matched_category>/
+      4. Default                         →  sorted/<type>/[date/]
+    Files directly in incoming/ root always use default routing.
+    """
+    file_cat = get_category(file_path)
+    if not file_cat:
+        return None, None
+
+    # Detect subfolder inside incoming/
+    try:
+        rel_parts = file_path.relative_to(INCOMING).parts
+    except ValueError:
+        rel_parts = ()
+
+    subfolder = rel_parts[0] if len(rel_parts) > 1 else None
+
+    sub_lower = subfolder.lower() if subfolder else ''
+
+    # ── Audio: eigene Routing-Logik ──────────────────────────────────────────
+    if file_cat == 'audio':
+        # Subfolder enthält Audio-Subkat-Keyword (z.B. "soundhypno" → audio/hypno/)
+        if sub_lower:
+            for kw, subcat in AUDIO_SUBCAT_KEYWORDS.items():
+                if kw in sub_lower:
+                    target = SORTED / 'audio' / subcat
+                    return target, f"audio/{subcat}/ [Keyword '{kw}']"
+        # Fallback: alle Audio nach sorted/audio/
+        return SORTED / 'audio', 'audio/'
+
+    # ── Alle anderen Typen ───────────────────────────────────────────────────
+    if subfolder:
+        # 1. Exact top-level category match (e.g. incoming/hypno/ → sorted/hypno/)
+        if sub_lower in TOP_CATEGORIES:
+            return SORTED / sub_lower, f"{sub_lower}/ [Subfolder-Match]"
+
+        # 2. Known video subcategory exists (e.g. incoming/sissy/ → sorted/videos/sissy/)
+        video_sub = SORTED / 'videos' / subfolder
+        if video_sub.exists() and file_cat == 'videos':
+            return video_sub, f"videos/{subfolder}/ [Video-Subkat]"
+
+        # 3. Keyword match (e.g. incoming/sissyhypno/ contains "hypno" → sorted/hypno/)
+        for keyword, mapped_cat in CATEGORY_KEYWORDS.items():
+            if keyword in sub_lower:
+                return SORTED / mapped_cat, f"{mapped_cat}/ [Keyword '{keyword}']"
+
+    # 4. Default routing by file type
+    if file_cat == 'videos':
+        date_dir = _date_subfolder(file_path)
+        return SORTED / 'videos' / date_dir, f"videos/{date_dir}/"
+    return SORTED / file_cat, f"{file_cat}/"
+
+
 def sort_files():
-    """Sortiert alle Files aus incoming/ (inkl. Unterordner)"""
+    """Sortiert alle Files aus incoming/ (inkl. Unterordner) mit intelligentem Subfolder-Routing."""
     if not INCOMING.exists():
-        print(f"❌ {INCOMING} existiert nicht")
+        print(f"Fehler: {INCOMING} existiert nicht")
         return
-    
-    # Find all files recursively (inkl. Unterordner)
+
     files = []
     for root, dirs, filenames in os.walk(INCOMING):
         for filename in filenames:
             files.append(Path(root) / filename)
-    
+
     if not files:
-        print("✅ Keine Files zum Sortieren")
+        print("Keine Files zum Sortieren")
         return
-    
+
     sorted_count = 0
     skipped_count = 0
     duplicate_removed_count = 0
-    
+
     for file_path in files:
-        category = get_category(file_path)
-        
-        if category:
-            # Videos: In Datum-Unterordner (z.B. sorted/videos/2026-04-20/)
-            # Bilder/GIFs: Direkt (zu fragmentiert sonst)
-            # Datum kommt aus mtime, damit Backlogs ihren Erstell-Zeitpunkt
-            # behalten statt alle in den heutigen Ordner zu fallen.
-            if category == "videos":
-                try:
-                    mtime = file_path.stat().st_mtime
-                    date_folder = datetime.fromtimestamp(mtime).strftime("%Y-%m-%d")
-                except OSError:
-                    date_folder = datetime.now().strftime("%Y-%m-%d")
-                target_dir = SORTED / category / date_folder
-            else:
-                target_dir = SORTED / category
-            
-            target_dir.mkdir(parents=True, exist_ok=True)
-            
-            # Prüfe ob Datei ein Duplikat ist (z.B. "bild (1).jpg")
-            is_dup, original_name = is_duplicate_copy(file_path)
-            
-            if is_dup:
-                # Prüfe ob Original im Zielordner existiert
-                original_path = target_dir / original_name
-                
-                if original_path.exists():
-                    # Original existiert → Duplikat löschen
-                    file_path.unlink()
-                    print(f"🗑️ Duplikat entfernt: {file_path.name} (Original: {original_name})")
-                    duplicate_removed_count += 1
-                    continue  # Nächste Datei
-                # Falls Original nicht existiert, wird das "Duplikat" normal verschoben
-            
-            target_path = target_dir / file_path.name
-            
-            # Handle Duplikate (falls Datei mit gleichem Namen schon existiert)
-            if target_path.exists():
-                base = target_path.stem
-                ext = target_path.suffix
-                counter = 1
-                while target_path.exists():
-                    target_path = target_dir / f"{base}_{counter}{ext}"
-                    counter += 1
-            
-            shutil.move(str(file_path), str(target_path))
-            
-            # Anzeige: Mit Datum-Ordner wenn vorhanden
-            if category == "videos":
-                date_folder = target_dir.name  # z.B. "2026-04-20"
-                print(f"✅ {file_path.name} → {category}/{date_folder}/")
-            else:
-                print(f"✅ {file_path.name} → {category}/")
-            
-            sorted_count += 1
-        else:
-            print(f"⚠️ Übersprungen (unbekannter Typ): {file_path.name}")
+        target_dir, display = resolve_target_dir(file_path)
+
+        if target_dir is None:
+            print(f"Uebersprungen (unbekannter Typ): {file_path.name}")
             skipped_count += 1
-    
-    # Cleanup: Lösche leere Unterordner in incoming/
+            continue
+
+        target_dir.mkdir(parents=True, exist_ok=True)
+
+        # Duplikat-Check (z.B. "bild (1).jpg")
+        is_dup, original_name = is_duplicate_copy(file_path)
+        if is_dup and (target_dir / original_name).exists():
+            file_path.unlink()
+            print(f"Duplikat entfernt: {file_path.name}")
+            duplicate_removed_count += 1
+            continue
+
+        target_path = target_dir / file_path.name
+        if target_path.exists():
+            base, ext = target_path.stem, target_path.suffix
+            counter = 1
+            while target_path.exists():
+                target_path = target_dir / f"{base}_{counter}{ext}"
+                counter += 1
+
+        shutil.move(str(file_path), str(target_path))
+        print(f"OK {file_path.name} -> {display}")
+        sorted_count += 1
+
+    # Cleanup leere Unterordner in incoming/
     for root, dirs, _files in os.walk(INCOMING, topdown=False):
         for dir_name in dirs:
             dir_path = Path(root) / dir_name
             try:
-                if not any(dir_path.iterdir()):  # Leer?
+                if not any(dir_path.iterdir()):
                     dir_path.rmdir()
-                    print(f"🗑️ Leerer Ordner entfernt: {dir_path.relative_to(INCOMING)}")
+                    print(f"Leerer Ordner entfernt: {dir_path.relative_to(INCOMING)}")
             except OSError:
-                pass  # Ordner nicht leer oder Permission-Error → ignorieren
-    
-    print(f"\n📊 Fertig: {sorted_count} sortiert, {duplicate_removed_count} Duplikate entfernt, {skipped_count} übersprungen")
+                pass
+
+    print(f"\nFertig: {sorted_count} sortiert, {duplicate_removed_count} Duplikate entfernt, {skipped_count} uebersprungen")
 
 if __name__ == "__main__":
     sort_files()

@@ -136,6 +136,14 @@ def find_files_to_convert():
     return files_to_convert
 
 def main():
+    import argparse
+    parser = argparse.ArgumentParser(description='Convert WebM/M4V to MP4')
+    parser.add_argument('--auto', action='store_true',
+                        help='Non-interactive mode (keep originals by default)')
+    parser.add_argument('--delete-original', action='store_true',
+                        help='Delete source file after conversion (use with --auto)')
+    args = parser.parse_args()
+
     # Check ffmpeg
     if not check_ffmpeg():
         print("❌ ffmpeg nicht gefunden!")
@@ -145,36 +153,39 @@ def main():
         print("\n  Linux: sudo apt install ffmpeg")
         print("  Mac: brew install ffmpeg")
         sys.exit(1)
-    
+
     # Find files to convert
     files = find_files_to_convert()
-    
+
     if not files:
         print("✅ Keine Dateien zum Konvertieren gefunden (WebM/M4V)")
         return
-    
+
     print(f"📦 Gefunden: {len(files)} Dateien (WebM/M4V)\n")
-    
-    # Ask for confirmation
-    print("Optionen:")
-    print("  1 - Konvertieren + Original behalten")
-    print("  2 - Konvertieren + Original löschen")
-    print("  3 - Abbrechen")
-    
-    choice = input("\nAuswahl: ").strip()
-    
-    if choice == '3':
-        print("Abgebrochen")
-        return
-    
-    delete_original = (choice == '2')
-    
+
+    if args.auto or args.delete_original:
+        delete_original = args.delete_original
+    else:
+        # Ask for confirmation
+        print("Optionen:")
+        print("  1 - Konvertieren + Original behalten")
+        print("  2 - Konvertieren + Original löschen")
+        print("  3 - Abbrechen")
+
+        choice = input("\nAuswahl: ").strip()
+
+        if choice == '3':
+            print("Abgebrochen")
+            return
+
+        delete_original = (choice == '2')
+
     # Convert all
     success_count = 0
     for file in files:
         if convert_webm_to_mp4(file, delete_original=delete_original):
             success_count += 1
-    
+
     print(f"\n📊 Fertig: {success_count}/{len(files)} konvertiert")
 
 if __name__ == "__main__":
