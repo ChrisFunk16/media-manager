@@ -7,6 +7,7 @@ Aufruf: python webui.py [--port=5000]
 
 import json
 import os
+import re
 import sys
 import hashlib
 import shutil
@@ -222,6 +223,38 @@ def search_files(query='', category=None, subcat=None, sort='date', page=1, per_
                 item = _build_item(f, 'outbox', favs)
                 if item:
                     results.append(item)
+    elif category == 'uncategorized':
+        _date_re = re.compile(r'^\d{4}-\d{2}-\d{2}$')
+        results = []
+        for vid_cat in ('videos', 'hypno'):
+            base = SORTED / vid_cat
+            if not base.exists():
+                continue
+            for f in base.iterdir():
+                if not f.is_file():
+                    continue
+                if f.suffix.lower() not in VIDEO_EXTS:
+                    continue
+                if query and query not in f.name.lower():
+                    continue
+                item = _build_item(f, vid_cat, favs)
+                if item:
+                    results.append(item)
+            for sub in base.iterdir():
+                if not sub.is_dir():
+                    continue
+                if not (_date_re.match(sub.name) or sub.name.lower() == 'new'):
+                    continue
+                for f in sub.rglob('*'):
+                    if not f.is_file():
+                        continue
+                    if f.suffix.lower() not in VIDEO_EXTS:
+                        continue
+                    if query and query not in f.name.lower():
+                        continue
+                    item = _build_item(f, vid_cat, favs)
+                    if item:
+                        results.append(item)
     else:
         if category in CATEGORIES:
             base = (SORTED / category / subcat) if subcat else (SORTED / category)
@@ -467,6 +500,8 @@ nav a.fav-link{color:#c06080}
 nav a.fav-link:hover,nav a.fav-link.active{color:#ff6b8a;background:#2a1020}
 nav a.outbox-link{color:#80b060}
 nav a.outbox-link:hover,nav a.outbox-link.active{color:#a0d080;background:#162010}
+nav a.uncat-link{color:#c08030}
+nav a.uncat-link:hover,nav a.uncat-link.active{color:#e0a050;background:#201808}
 .outbox-badge{display:inline-block;background:#a0d080;color:#0d1a08;border-radius:10px;padding:0 6px;font-size:.72rem;font-weight:700;margin-left:3px;vertical-align:middle}
 .btn-outbox{background:#2a4020;border:1px solid #4a7030;color:#a0d080}
 .btn-outbox:hover{background:#3a5828;color:#c0e090}
@@ -697,7 +732,8 @@ select{background:#0d0d1a;border:1px solid #2a2a45;border-radius:7px;padding:7px
   <h1>&#128230; Media Manager</h1>
   <nav>
     <a href="/" class="{{ 'active' if view=='dashboard' }}">Dashboard</a>
-    <a href="/browse" class="{{ 'active' if (view=='browse' and cat not in ['favorites']) }}">Browse</a>
+    <a href="/browse" class="{{ 'active' if (view=='browse' and cat not in ['favorites','uncategorized']) }}">Browse</a>
+    <a href="/browse?cat=uncategorized" class="uncat-link {{ 'active' if (view=='browse' and cat=='uncategorized') }}">&#128916; Unkategorisiert</a>
     <a href="/browse?cat=favorites" class="fav-link {{ 'active' if (view=='browse' and cat=='favorites') }}">&hearts; Favoriten</a>
     <a href="/sessions" class="{{ 'active' if view in ['sessions','session_view'] }}">&#127902; Sessions</a>
     <a href="/download" class="{{ 'active' if view=='download' }}">&#8681; Download</a>
@@ -763,6 +799,7 @@ select{background:#0d0d1a;border:1px solid #2a2a45;border-radius:7px;padding:7px
       {%- for c in ['images','gifs','videos','hypno','audio'] %}
       <option value="{{ c }}"{{ ' selected' if cat==c }}>{{ c }}</option>
       {%- endfor %}
+      <option value="uncategorized"{{ ' selected' if cat=='uncategorized' }}>&#128916; Unkategorisiert</option>
       <option value="favorites"{{ ' selected' if cat=='favorites' }}>&hearts; Favoriten</option>
       <option value="outbox"{{ ' selected' if cat=='outbox' }}>&#128228; Ausgang</option>
     </select>
@@ -2182,7 +2219,7 @@ def browse():
 
     items, total = search_files(
         query=q,
-        category=cat if (cat in CATEGORIES or cat in ('favorites', 'outbox')) else None,
+        category=cat if (cat in CATEGORIES or cat in ('favorites', 'outbox', 'uncategorized')) else None,
         subcat=subcat or None,
         sort=sort,
         page=page,
